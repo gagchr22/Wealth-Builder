@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192">
+  <rect width="192" height="192" rx="40" fill="#080808"/>
+  <text x="96" y="72" font-family="Arial Black,Arial" font-weight="900" font-size="52" fill="#00e676" text-anchor="middle">W</text>
+  <text x="96" y="138" font-family="Arial,sans-serif" font-size="22" font-weight="600" fill="#efefef" text-anchor="middle">BUILDER</text>
+  <circle cx="152" cy="44" r="16" fill="#00e676" opacity="0.9"/>
+  <text x="152" y="50" font-family="Arial" font-size="16" fill="#080808" text-anchor="middle" font-weight="bold">$</text>
+</svg>

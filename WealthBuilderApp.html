@@ -1,0 +1,2383 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Wealth Builder">
+<meta name="theme-color" content="#080808">
+<meta name="description" content="Personal finance tracker — savings, investments, expenses">
+<title>Wealth Builder</title>
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --green: #00e676; --black: #080808; --card: #111; --card2: #181818;
+    --border: #222; --text: #efefef; --muted: #666; --dim: #444;
+    --gold: #ffd54f; --blue: #64b5f6; --orange: #ffb74d; --red: #ff5252;
+  }
+  body.light {
+    --black: #f5f5f5; --card: #fff; --card2: #f0f0f0; --border: #ddd;
+    --text: #111; --muted: #777; --dim: #bbb; --green: #00a152;
+    --gold: #c79a00; --blue: #1565c0; --orange: #e65100; --red: #c62828;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--black); color: var(--text); font-family: 'DM Sans', sans-serif; min-height: 100vh; padding-bottom: 80px; transition: background 0.3s, color 0.3s; }
+  input, select { outline: none; font-family: 'DM Sans', sans-serif; color: var(--text); }
+  input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none; }
+  ::-webkit-scrollbar { width: 4px; } ::-webkit-scrollbar-track { background: var(--card); } ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+  /* HEADER */
+  #header { background: var(--card); border-bottom: 1px solid var(--border); padding: 20px 24px 0; position: sticky; top: 0; z-index: 50; }
+  #header-inner { max-width: 740px; margin: 0 auto; }
+  .header-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; flex-wrap: wrap; gap: 8px; }
+  .app-title { font-family: 'Bebas Neue', sans-serif; font-size: 26px; letter-spacing: 3px; color: var(--green); line-height: 1; }
+  .app-sub { font-size: 12px; color: var(--dim); letter-spacing: 1px; margin-top: 2px; }
+  .header-right { display: flex; align-items: center; gap: 14px; }
+  .header-bal-label { font-size: 11px; color: var(--muted); letter-spacing: 1px; text-transform: uppercase; text-align: right; }
+  .header-bal { font-family: 'Bebas Neue', sans-serif; font-size: 28px; color: var(--green); letter-spacing: 1px; text-align: right; transition: color 0.3s; }
+  .theme-btn { background: none; border: 1px solid var(--border); border-radius: 8px; color: var(--muted); font-size: 16px; padding: 6px 10px; cursor: pointer; transition: all 0.2s; }
+  .theme-btn:hover { border-color: var(--green); color: var(--green); }
+  .tabs { display: flex; gap: 4px; overflow-x: auto; padding-bottom: 0; }
+  /* BOTTOM NAV — phone style */
+  .tabs { display: none !important; } /* hide old top tabs */
+  #bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background: #0d0d0d; border-top: 1px solid #1a1a1a; display: flex; z-index: 100; padding-bottom: env(safe-area-inset-bottom); }
+  .nav-btn { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 10px 4px 8px; border: none; background: none; cursor: pointer; transition: all 0.15s; -webkit-tap-highlight-color: transparent; min-width: 0; }
+  .nav-btn .nav-icon { font-size: 20px; line-height: 1; margin-bottom: 3px; }
+  .nav-btn .nav-label { font-family: 'DM Sans', sans-serif; font-size: 9px; letter-spacing: 0.5px; text-transform: uppercase; color: #555; white-space: nowrap; }
+  .nav-btn.active .nav-label { color: var(--green); }
+  .nav-btn.active .nav-icon { transform: scale(1.15); }
+  /* Main content padding for bottom nav */
+  #main { padding-bottom: calc(80px + env(safe-area-inset-bottom)); }
+  /* Header compact for mobile */
+  #header { padding: 12px 16px 0; }
+  .app-title { font-size: 20px; letter-spacing: 2px; }
+  .hstat-val { font-size: 18px !important; }
+  .header-right { gap: 12px; }
+  /* Touch-friendly inputs */
+  .inp { font-size: 16px !important; } /* prevents iOS zoom on focus */
+  select.inp { font-size: 16px !important; }
+  /* Tap target sizing */
+  .btn-green { min-height: 48px; font-size: 15px; }
+  .btn-ghost { min-height: 40px; }
+  /* Card spacing */
+  .card { padding: 16px; }
+  /* Safe area for header */
+  #header { padding-top: max(12px, env(safe-area-inset-top)); }
+
+  /* LAYOUT */
+  #main { max-width: 740px; margin: 0 auto; padding: 28px 16px 0; }
+  .section-title { font-family: 'Bebas Neue', sans-serif; font-size: 38px; letter-spacing: 2px; color: var(--text); margin-bottom: 4px; }
+  .section-title span { color: var(--green); }
+  .section-desc { font-size: 13px; color: var(--muted); margin-bottom: 20px; line-height: 1.6; }
+  .label { font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: var(--muted); margin-bottom: 6px; }
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 20px 22px; margin-bottom: 12px; }
+  .divider { border: none; border-top: 1px solid var(--border); margin: 32px 0; }
+
+  /* INPUTS */
+  .inp { background: var(--card2); border: 1px solid var(--border); border-radius: 10px; color: var(--text); font-size: 14px; padding: 10px 14px; width: 100%; transition: border-color 0.2s; }
+  .inp:focus { border-color: var(--green); }
+  .inp::placeholder { color: var(--dim); }
+  .inp-range { width: 100%; accent-color: var(--green); background: none; border: none; padding: 0; cursor: pointer; }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px; }
+  .grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+
+  /* BUTTONS */
+  .btn-green { background: var(--green); color: var(--black); border: none; border-radius: 10px; font-family: 'Bebas Neue', sans-serif; font-size: 16px; letter-spacing: 2px; padding: 12px 24px; cursor: pointer; transition: opacity 0.2s; width: 100%; }
+  .btn-green:hover { opacity: 0.85; }
+  .btn-ghost { background: none; border: 1px solid var(--border); color: var(--muted); border-radius: 8px; font-size: 13px; padding: 6px 12px; cursor: pointer; transition: all 0.2s; }
+  .btn-ghost:hover { border-color: var(--red); color: var(--red); }
+  .btn-blue { background: none; border: 1px solid var(--border); color: var(--blue); border-radius: 8px; font-size: 12px; padding: 5px 10px; cursor: pointer; transition: all 0.2s; font-family: 'DM Sans', sans-serif; }
+  .btn-blue:hover { background: var(--blue); color: #fff; }
+  .pill { border-radius: 99px; font-size: 11px; letter-spacing: 1px; text-transform: uppercase; padding: 5px 14px; cursor: pointer; border: 1px solid; transition: all 0.2s; font-family: 'DM Sans', sans-serif; }
+
+  /* ALERT BANNER */
+  .alert { border-radius: 12px; padding: 14px 18px; margin-bottom: 14px; font-size: 13px; display: flex; align-items: center; gap: 10px; }
+  .alert-warn { background: rgba(255,213,79,0.1); border: 1px solid rgba(255,213,79,0.3); color: var(--gold); }
+  .alert-danger { background: rgba(255,82,82,0.1); border: 1px solid rgba(255,82,82,0.3); color: var(--red); }
+  .alert-ok { background: rgba(0,230,118,0.08); border: 1px solid rgba(0,230,118,0.25); color: var(--green); }
+
+  /* SETUP */
+  .strategy-options { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; }
+  .tier-row { display: flex; align-items: center; gap: 12px; background: var(--card2); border-radius: 10px; padding: 10px 16px; margin-bottom: 8px; }
+  .tier-range { font-family: 'Bebas Neue', sans-serif; font-size: 18px; color: var(--text); min-width: 100px; letter-spacing: 1px; }
+  .tier-pct { font-family: 'Bebas Neue', sans-serif; font-size: 24px; color: var(--green); min-width: 46px; text-align: right; }
+  .summary-banner { background: linear-gradient(135deg, rgba(0,230,118,0.08), rgba(0,230,118,0.02)); border: 1px solid rgba(0,230,118,0.25); border-radius: 14px; padding: 20px 24px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; }
+  .val-big { font-family: 'Bebas Neue', sans-serif; font-size: 36px; letter-spacing: 1px; line-height: 1; }
+
+  /* PAYSTUBS */
+  .table-wrap { background: var(--card); border: 1px solid var(--border); border-radius: 14px; overflow: hidden; margin-bottom: 16px; }
+  .table-head { display: grid; grid-template-columns: 1.5fr 1.3fr 1fr 1fr auto; gap: 8px; padding: 10px 16px; border-bottom: 1px solid var(--border); }
+  .table-head span { font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: var(--dim); }
+  .table-row { display: grid; grid-template-columns: 1.5fr 1.3fr 1fr 1fr auto; gap: 8px; padding: 12px 16px; border-bottom: 1px solid var(--card2); align-items: center; animation: rowIn 0.3s ease; }
+  .table-row:last-child { border-bottom: none; }
+  @keyframes rowIn { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:translateY(0); } }
+  .table-empty { padding: 24px; text-align: center; color: var(--dim); font-size: 13px; }
+  .total-banner { background: linear-gradient(135deg, rgba(100,181,246,0.1), rgba(100,181,246,0.03)); border: 1px solid rgba(100,181,246,0.25); border-radius: 16px; padding: 20px 24px; margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
+  .stat-card { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 16px; text-align: center; }
+
+  /* TRANSACTION LOG */
+  .tx-row { display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-bottom: 1px solid var(--card2); animation: rowIn 0.3s ease; }
+  .tx-row:last-child { border-bottom: none; }
+  .tx-icon { width: 34px; height: 34px; border-radius: 99px; display: flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0; }
+  .tx-in { background: rgba(0,230,118,0.12); }
+  .tx-out { background: rgba(255,82,82,0.12); }
+  .tx-amount-in { font-family: 'Bebas Neue', sans-serif; font-size: 18px; color: var(--green); letter-spacing: 1px; }
+  .tx-amount-out { font-family: 'Bebas Neue', sans-serif; font-size: 18px; color: var(--red); letter-spacing: 1px; }
+
+  /* PLAN */
+  .milestone-card { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 18px 20px; }
+  .prog { height: 7px; background: var(--card2); border-radius: 99px; overflow: hidden; margin-top: 8px; }
+  .prog-fill { height: 100%; border-radius: 99px; transition: width 0.8s cubic-bezier(.4,0,.2,1); }
+  .milestones-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px; }
+  .chart-wrap { display: flex; align-items: flex-end; gap: 4px; height: 120px; overflow-x: auto; padding-bottom: 8px; }
+  .bar { transition: height 0.6s cubic-bezier(.4,0,.2,1); border-radius: 4px 4px 0 0; opacity: 0.85; min-width: 28px; flex: 0 0 28px; }
+  .bar-label { font-size: 9px; color: var(--dim); margin-top: 4px; letter-spacing: 0.5px; text-align: center; }
+  .chart-legend { display: flex; gap: 16px; margin-top: 8px; flex-wrap: wrap; }
+  .legend-dot { width: 10px; height: 10px; border-radius: 2px; }
+  .month-row { display: flex; align-items: center; gap: 12px; padding: 10px 14px; border-radius: 10px; margin-bottom: 6px; }
+  .month-name { font-family: 'Bebas Neue', sans-serif; font-size: 17px; letter-spacing: 1px; min-width: 50px; }
+  .m-badge { margin-left: 8px; font-size: 10px; background: rgba(255,213,79,0.15); color: var(--gold); padding: 2px 8px; border-radius: 99px; border: 1px solid rgba(255,213,79,0.3); }
+
+  /* INVESTMENTS */
+  .alloc-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; }
+  .alloc-card { background: var(--card2); border-radius: 12px; padding: 16px; text-align: center; }
+  .alloc-bar { height: 10px; border-radius: 99px; overflow: hidden; display: flex; margin-top: 16px; }
+  .inv-card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; overflow: hidden; margin-bottom: 10px; cursor: pointer; transition: border-color 0.2s; }
+  .inv-header { display: flex; align-items: center; gap: 16px; padding: 18px 22px; }
+  .inv-ticker { font-family: 'Bebas Neue', sans-serif; font-size: 34px; letter-spacing: 2px; line-height: 1; min-width: 80px; }
+  .inv-body { padding: 0 22px 20px; border-top: 1px solid var(--border); }
+  .inv-desc { font-size: 13px; color: var(--muted); line-height: 1.7; margin: 16px 0; }
+  .holding-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+  .hold-bar { width: 100px; height: 4px; background: var(--card2); border-radius: 99px; overflow: hidden; flex-shrink: 0; }
+  .hold-fill { height: 100%; border-radius: 99px; }
+
+  /* CONFETTI */
+  #confetti-canvas { position:fixed;inset:0;pointer-events:none;z-index:999;display:none; }
+
+  /* QUOTE BAR */
+  .quote-bar { background: linear-gradient(135deg, rgba(0,230,118,0.06), rgba(0,230,118,0.01)); border: 1px solid rgba(0,230,118,0.18); border-radius: 12px; padding: 12px 18px; margin-bottom: 20px; display: flex; align-items: flex-start; gap: 12px; }
+  .quote-mark { font-size: 32px; line-height: 1; color: var(--green); opacity: 0.4; flex-shrink: 0; font-family: Georgia, serif; }
+  .quote-text { font-size: 13px; color: var(--muted); line-height: 1.6; font-style: italic; }
+  .quote-author { font-size: 11px; color: var(--dim); letter-spacing: 1px; text-transform: uppercase; margin-top: 4px; }
+
+  /* WHAT-IF */
+  .whatif-card { background: var(--card); border: 1px solid rgba(100,181,246,0.25); border-radius: 14px; padding: 18px 20px; margin-bottom: 16px; }
+  .whatif-result { font-family: 'Bebas Neue', sans-serif; font-size: 28px; color: var(--blue); letter-spacing: 1px; }
+
+  /* UNDO TOAST */
+  #undo-toast { position:fixed;bottom:90px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--card);border:1px solid var(--border);border-radius:12px;padding:12px 20px;font-size:13px;display:flex;align-items:center;gap:14px;z-index:200;box-shadow:0 8px 32px rgba(0,0,0,0.4);opacity:0;transition:all 0.3s;pointer-events:none;white-space:nowrap; }
+  #undo-toast.show { opacity:1;transform:translateX(-50%) translateY(0);pointer-events:all; }
+  #undo-btn { background:var(--green);color:var(--black);border:none;border-radius:8px;font-family:'Bebas Neue',sans-serif;font-size:14px;letter-spacing:1px;padding:6px 14px;cursor:pointer; }
+
+  /* DONUT */
+  .donut-wrap { display: flex; align-items: center; gap: 24px; flex-wrap: wrap; margin-top: 12px; }
+  .donut-legend { display: flex; flex-direction: column; gap: 8px; flex: 1; min-width: 140px; }
+  .donut-legend-row { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--muted); }
+  .donut-dot { width: 10px; height: 10px; border-radius: 3px; flex-shrink: 0; }
+
+
+
+  /* GAUGE */
+  .gauge-wrap { display:flex;flex-direction:column;align-items:center;padding:8px 0 0; }
+  .gauge-label { font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-top:10px; }
+  .gauge-pct { font-family:'Bebas Neue',sans-serif;font-size:42px;letter-spacing:2px;line-height:1; }
+  .gauge-status { font-size:12px;color:var(--muted);margin-top:4px; }
+  /* STREAK */
+  .streak-card { background:linear-gradient(135deg,rgba(255,213,79,0.08),rgba(255,213,79,0.02));border:1px solid rgba(255,213,79,0.25);border-radius:14px;padding:16px 20px;display:flex;align-items:center;gap:16px;margin-bottom:12px; }
+  .streak-flame { font-size:36px;line-height:1; }
+  .streak-count { font-family:'Bebas Neue',sans-serif;font-size:48px;color:var(--gold);letter-spacing:2px;line-height:1; }
+  /* BILL CALENDAR */
+  .cal-grid { display:grid;grid-template-columns:repeat(7,1fr);gap:3px;margin-top:12px; }
+  .cal-day { border-radius:6px;padding:4px 2px;text-align:center;font-size:10px;min-height:36px;position:relative;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:2px; }
+  .cal-day-num { font-size:10px;color:var(--muted); }
+  .cal-day.has-bill { background:rgba(255,82,82,0.1);border:1px solid rgba(255,82,82,0.25); }
+  .cal-day.today { background:rgba(0,230,118,0.1);border:1px solid rgba(0,230,118,0.3); }
+  .cal-bill-dot { width:5px;height:5px;border-radius:99px;background:var(--red);flex-shrink:0; }
+  .cal-bill-amt { font-size:8px;color:var(--red); }
+  .cal-header-day { font-size:9px;letter-spacing:1px;text-transform:uppercase;color:var(--dim);text-align:center;padding:4px 0; }
+  /* TOOLS TAB */
+  .tool-card { background:var(--card);border:1px solid var(--border);border-radius:16px;padding:20px 22px;margin-bottom:16px; }
+  .tool-title { font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:2px;color:var(--text);margin-bottom:4px; }
+  .tool-subtitle { font-size:12px;color:var(--muted);margin-bottom:16px; }
+  .hours-result { font-family:'Bebas Neue',sans-serif;font-size:52px;color:var(--green);letter-spacing:2px;line-height:1;text-align:center;margin:16px 0 4px; }
+  .hours-sub { text-align:center;font-size:13px;color:var(--muted); }
+  .afford-result { font-family:'Bebas Neue',sans-serif;font-size:32px;letter-spacing:1px;line-height:1; }
+
+  /* NEXT PAYDAY */
+  .payday-card { background: linear-gradient(135deg,rgba(0,230,118,0.08),rgba(0,230,118,0.02)); border:1px solid rgba(0,230,118,0.25); border-radius:14px; padding:18px 22px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px; margin-bottom:12px; }
+  .payday-days { font-family:'Bebas Neue',sans-serif; font-size:52px; color:var(--green); letter-spacing:2px; line-height:1; }
+  /* DID I SAVE badge */
+  .save-check { display:flex; gap:8px; margin-top:6px; }
+  .save-btn { flex:1; border:none; border-radius:8px; font-family:'Bebas Neue',sans-serif; font-size:14px; letter-spacing:1px; padding:8px 0; cursor:pointer; transition:all 0.2s; }
+  /* DEDUCTION ROW */
+  .ded-row { display:flex; align-items:center; gap:10px; padding:10px 14px; background:var(--card2); border-radius:10px; margin-bottom:8px; }
+  /* BUFFER NOTICE */
+  .buffer-notice { background:rgba(255,183,77,0.08); border:1px solid rgba(255,183,77,0.25); border-radius:12px; padding:14px 18px; font-size:13px; color:var(--orange); line-height:1.6; margin-bottom:12px; }
+  /* INVESTMENT TRACKER */
+  .port-summary { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-bottom:16px; }
+  .port-card { background:var(--card); border:1px solid var(--border); border-radius:14px; padding:16px; text-align:center; }
+  .stock-row { display:grid; grid-template-columns:2fr 1fr 1fr 1fr 1fr auto; gap:8px; padding:13px 16px; border-bottom:1px solid #181818; align-items:center; animation:rowIn 0.3s ease; }
+  .stock-row:last-child { border-bottom:none; }
+  .stock-ticker { font-family:'Bebas Neue',sans-serif; font-size:22px; letter-spacing:2px; }
+  .change-up { color:var(--green); }
+  .change-down { color:var(--red); }
+  .price-loading { color:var(--muted); font-size:12px; }
+  .refresh-btn { background:none; border:1px solid var(--border); color:var(--muted); border-radius:8px; font-size:11px; padding:5px 10px; cursor:pointer; transition:all 0.2s; letter-spacing:1px; }
+  .refresh-btn:hover { border-color:var(--green); color:var(--green); }
+  .port-bar-wrap { margin-bottom:10px; }
+  .port-bar { height:8px; background:#1e1e1e; border-radius:99px; overflow:hidden; margin-top:5px; display:flex; }
+  /* FOOTER */
+  .footer { text-align: center; font-size: 11px; color: var(--dim); margin-top: 48px; padding: 0 20px; line-height: 1.9; border-top: 1px solid var(--border); padding-top: 24px; }
+  .modal-bg { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 100; align-items: center; justify-content: center; }
+  .modal-bg.open { display: flex; }
+  .modal { background: var(--card); border: 1px solid var(--border); border-radius: 20px; padding: 28px; width: 90%; max-width: 440px; max-height: 80vh; overflow-y: auto; }
+  .modal-title { font-family: 'Bebas Neue', sans-serif; font-size: 28px; letter-spacing: 2px; color: var(--text); margin-bottom: 6px; }
+</style>
+</head>
+<body>
+
+<!-- CONFETTI -->
+<canvas id="confetti-canvas"></canvas>
+
+<!-- UNDO TOAST -->
+<div id="undo-toast">
+  <span id="undo-msg">Income added</span>
+  <button id="undo-btn" onclick="undoLast()">↩ UNDO</button>
+</div>
+
+<!-- PAY BILLS MODAL -->
+<div class="modal-bg" id="bills-modal" onclick="if(event.target===this)closeBillsModal()">
+  <div class="modal">
+    <div class="modal-title">PAY THIS <span style="color:var(--red)">MONTH'S</span> BILLS</div>
+    <div style="font-size:13px;color:var(--muted);margin-bottom:20px">Select which recurring expenses to deduct from your balance now.</div>
+    <div id="bills-list"></div>
+    <div style="display:flex;gap:10px;margin-top:20px">
+      <button class="btn-green" style="flex:1" onclick="paySelectedBills()">DEDUCT SELECTED</button>
+      <button class="btn-ghost" style="flex:0 0 auto" onclick="closeBillsModal()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<div id="header">
+  <div id="header-inner">
+    <div class="header-top">
+      <div>
+        <div class="app-title">WEALTH BUILDER</div>
+        <div class="app-sub" id="header-sub">Christopher's Personal Finance Tracker</div>
+      </div>
+      <div class="header-right">
+        <button class="theme-btn" onclick="toggleTheme()" title="Toggle light/dark mode">☀</button>
+        <div style="text-align:right">
+          <div class="header-bal-label">Cash</div>
+          <div class="header-bal" id="header-bal" style="font-size:22px">$410</div>
+        </div>
+        <div style="text-align:right">
+          <div class="header-bal-label">Portfolio</div>
+          <div class="header-bal" id="header-portfolio" style="font-size:22px;color:var(--blue)">$0</div>
+        </div>
+        <div style="text-align:right">
+          <div class="header-bal-label">Net Worth</div>
+          <div class="header-bal" id="header-networth" style="font-size:22px;color:var(--gold)">$410</div>
+        </div>
+      </div>
+    </div>
+    <div class="tabs"></div>
+  </div>
+</div>
+
+<div id="main">
+
+  <!-- ══ SETUP ══ -->
+  <div id="tab-setup">
+    <div class="section-title">YOUR <span>PROFILE</span></div>
+    <div class="section-desc">Enter your details once — everything updates automatically. Data is saved in your browser.</div>
+
+    <!-- DAILY QUOTE -->
+    <div class="quote-bar" id="daily-quote"></div>
+
+    <div id="alerts-area"></div>
+
+    <div class="grid2">
+      <div><div class="label">Your Name</div><input class="inp" id="inp-name" value="Christopher" oninput="updateAll()" placeholder="Your name"></div>
+      <div><div class="label">Hourly Rate ($)</div><input class="inp" type="number" id="inp-rate" value="16.50" oninput="updateAll()" placeholder="16.50"></div>
+    </div>
+    <div class="grid2">
+      <div><div class="label">Starting Balance ($)</div><input class="inp" type="number" id="inp-savings" value="410" oninput="updateAll()" placeholder="410"></div>
+      <div><div class="label">Savings Goal ($)</div><input class="inp" type="number" id="inp-goal" value="5000" oninput="updateAll()" placeholder="5000"></div>
+    </div>
+    <div class="grid2" style="margin-bottom:24px">
+      <div><div class="label">Low Balance Alert ($)</div><input class="inp" type="number" id="inp-alert" value="100" oninput="updateAll()" placeholder="100"></div>
+      <div style="display:flex;align-items:flex-end"><button class="btn-blue" style="width:100%;padding:10px;font-size:13px" onclick="exportCSV()">⬇ Export CSV</button></div>
+    </div>
+
+    <div class="card" style="margin-bottom:24px">
+      <div class="label" style="margin-bottom:12px">Savings Strategy</div>
+      <div class="strategy-options">
+        <button class="pill" id="pill-auto" style="background:var(--green);color:var(--black);border-color:var(--green)" onclick="setStrategy('auto')">Auto Tiers (Recommended)</button>
+        <button class="pill" id="pill-custom" style="background:transparent;color:var(--muted);border-color:var(--border)" onclick="setStrategy('custom')">Fixed %</button>
+      </div>
+      <div id="auto-tiers">
+        <div class="tier-row"><span class="tier-range">Under $75</span><span style="flex:1;font-size:12px;color:var(--muted)">Save 10% — keep the rest</span><span class="tier-pct">10%</span></div>
+        <div class="tier-row"><span class="tier-range">$75–$150</span><span style="flex:1;font-size:12px;color:var(--muted)">Save 20% — solid paycheque</span><span class="tier-pct">20%</span></div>
+        <div class="tier-row"><span class="tier-range">Over $150</span><span style="flex:1;font-size:12px;color:var(--muted)">Save 25% — maximize it</span><span class="tier-pct">25%</span></div>
+      </div>
+      <div id="custom-tier" style="display:none">
+        <div class="label">Save this % of every paycheque</div>
+        <div style="display:flex;align-items:center;gap:16px;margin-top:8px">
+          <input type="range" class="inp-range" id="inp-custpct" min="5" max="50" value="20" oninput="document.getElementById('custpct-val').textContent=this.value+'%';updateAll()">
+          <span id="custpct-val" style="font-family:'Bebas Neue',sans-serif;font-size:32px;color:var(--green);min-width:60px;text-align:right">20%</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="summary-banner">
+      <div>
+        <div class="label">Estimated Monthly Savings</div>
+        <div class="val-big" style="color:var(--green)" id="setup-monthly">$0.00</div>
+        <div style="font-size:12px;color:var(--muted);margin-top:4px" id="setup-monthly-sub">Based on 2 paycheques × avg net</div>
+      </div>
+      <div style="text-align:right">
+        <div class="label">Months to Goal</div>
+        <div class="val-big" style="color:var(--gold)" id="setup-months-goal">—</div>
+        <div style="font-size:12px;color:var(--muted);margin-top:4px" id="setup-goal-sub">to reach your goal</div>
+      </div>
+    </div>
+
+    <!-- NEXT PAYDAY + GAUGE ROW -->
+    <div class="grid2" style="margin-top:12px">
+      <div class="payday-card" style="flex-direction:column;align-items:flex-start;margin-bottom:0">
+        <div class="label" style="margin-bottom:4px">Next Payday In</div>
+        <div style="display:flex;align-items:baseline;gap:8px">
+          <div class="payday-days" id="payday-days">—</div>
+          <div style="font-size:14px;color:var(--muted)" id="payday-label">days</div>
+        </div>
+        <div style="font-size:12px;color:var(--muted);margin-top:4px" id="payday-date-label">Set your last pay date below</div>
+        <div style="margin-top:10px;width:100%">
+          <div class="label">Last Pay Date</div>
+          <input class="inp" type="date" id="inp-lastpay" oninput="updatePayday();saveState()" style="margin-top:4px">
+        </div>
+      </div>
+      <div class="card" style="margin-bottom:0;padding:16px">
+        <div class="label" style="margin-bottom:0">Savings Rate</div>
+        <div class="gauge-wrap">
+          <canvas id="gauge-canvas" width="140" height="80"></canvas>
+          <div class="gauge-pct" id="gauge-pct" style="color:var(--green)">0%</div>
+          <div class="gauge-status" id="gauge-status">—</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- WORST-CASE BUFFER -->
+    <div class="card" style="margin-top:12px;margin-bottom:0">
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:2px;color:var(--orange);margin-bottom:8px">⚠ VARIABLE INCOME BUFFER</div>
+      <div style="font-size:13px;color:var(--muted);margin-bottom:12px;line-height:1.6">Set your worst-case paycheque. Projections will use this as a floor so you're never caught off guard by a slow week.</div>
+      <div class="grid2" style="margin-bottom:0">
+        <div>
+          <div class="label">Worst-Case Net Pay ($)</div>
+          <input class="inp" type="number" id="inp-worstcase" placeholder="e.g. 55" oninput="updateAll()">
+        </div>
+        <div id="buffer-result" style="display:flex;align-items:flex-end;padding-bottom:2px">
+          <div style="font-size:13px;color:var(--muted)" id="buffer-desc">Enter your lowest expected paycheque</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ PAYSTUBS ══ -->
+  <div id="tab-paystubs" style="display:none">
+    <div class="section-title">PAY <span>STUBS</span></div>
+    <div class="section-desc">Add each paycheque — it automatically increases your balance. Net pay is optional.</div>
+
+    <div class="card" style="margin-bottom:20px">
+      <div class="label" style="margin-bottom:8px">Add New Paycheque</div>
+      <div class="grid3" style="margin-bottom:8px">
+        <div><div class="label">Pay Date</div><input class="inp" id="new-date" placeholder="e.g. May 22"></div>
+        <div><div class="label">Hours Worked</div><input class="inp" type="number" id="new-hours" placeholder="e.g. 8.5"></div>
+        <div><div class="label">Net Pay (optional)</div><input class="inp" type="number" id="new-net" placeholder="Leave blank to estimate"></div>
+      </div>
+      <div class="grid2" style="margin-bottom:12px">
+        <div><div class="label">Source / Note</div><input class="inp" id="new-source" placeholder="e.g. Tip, Cash, Shift bonus"></div>
+        <div style="display:flex;align-items:flex-end">
+          <div style="width:100%">
+            <div class="label">Type</div>
+            <select class="inp" id="new-type">
+              <option value="paycheque">💳 Paycheque</option>
+              <option value="cash">💵 Cash / Tip</option>
+              <option value="etransfer">📲 E-Transfer</option>
+              <option value="other">📦 Other Income</option>
+            </select>
+          </div>
+        </div>
+      </div>
+      <button class="btn-green" onclick="addPaystub()">+ ADD INCOME</button>
+    </div>
+
+    <div class="table-wrap">
+      <div class="table-head">
+        <span>Date / Source</span><span>Type</span><span>Net Pay</span><span>Save</span><span></span>
+      </div>
+      <div id="stubs-body"></div>
+    </div>
+
+    <div id="stubs-stats"></div>
+
+    <!-- DID I SAVE? TRACKER -->
+    <div class="card" style="margin-top:4px">
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:2px;color:var(--text);margin-bottom:4px">✅ DID I SAVE THIS PAYCHEQUE?</div>
+      <div style="font-size:13px;color:var(--muted);margin-bottom:14px;line-height:1.6">After each paycheque, did you actually move the money to savings? Track it here — accountability is everything.</div>
+      <div id="save-check-list"></div>
+      <div id="save-check-summary" style="margin-top:12px"></div>
+    </div>
+
+    <!-- TAX DEDUCTION TRACKER -->
+    <div class="card" style="margin-top:12px">
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:2px;color:var(--text);margin-bottom:4px">🧾 TAX DEDUCTIONS (YTD)</div>
+      <div style="font-size:13px;color:var(--muted);margin-bottom:14px;line-height:1.6">Log your EI and CPP deductions from each stub so you can see exactly what's been taken off your pay this year.</div>
+      <div class="grid2" style="margin-bottom:12px">
+        <div><div class="label">Pay Date (for this deduction)</div><input class="inp" id="ded-date" placeholder="e.g. May 8"></div>
+        <div><div class="label">Income Tax ($)</div><input class="inp" type="number" id="ded-tax" placeholder="0.00"></div>
+      </div>
+      <div class="grid2" style="margin-bottom:12px">
+        <div><div class="label">EI Deduction ($)</div><input class="inp" type="number" id="ded-ei" placeholder="e.g. 1.56"></div>
+        <div><div class="label">CPP Deduction ($)</div><input class="inp" type="number" id="ded-cpp" placeholder="e.g. 0.00"></div>
+      </div>
+      <button class="btn-green" onclick="addDeduction()">+ LOG DEDUCTIONS</button>
+      <div id="ded-list" style="margin-top:14px"></div>
+      <div id="ded-summary" style="margin-top:10px"></div>
+    </div>
+  </div>
+
+  <!-- ══ EXPENSES ══ -->
+  <div id="tab-expenses" style="display:none">
+    <div class="section-title">MY <span>EXPENSES</span></div>
+    <div class="section-desc">Track bills and costs. One-time expenses deduct from your balance immediately. Use "Pay Bills" to deduct monthly recurring charges.</div>
+
+    <div style="display:flex;gap:10px;margin-bottom:16px">
+      <button class="btn-green" style="flex:1" onclick="openBillsModal()">💸 PAY THIS MONTH'S BILLS</button>
+    </div>
+
+    <!-- BILL CALENDAR -->
+    <div class="card" style="margin-bottom:20px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:2px">
+        <div class="label" style="margin-bottom:0">Bill Calendar — This Month</div>
+        <div id="cal-month-label" style="font-size:11px;color:var(--muted)"></div>
+      </div>
+      <div class="cal-grid" id="cal-header-row"></div>
+      <div class="cal-grid" id="cal-body"></div>
+    </div>
+
+    <!-- Add Expense -->
+    <div class="card" style="margin-bottom:20px">
+      <div class="label" style="margin-bottom:10px">Add Expense</div>
+      <div class="grid2" style="margin-bottom:12px">
+        <div><div class="label">Name</div><input class="inp" id="exp-name" placeholder="e.g. Netflix, Rent, Gas"></div>
+        <div><div class="label">Amount ($)</div><input class="inp" type="number" id="exp-amount" placeholder="e.g. 15.99"></div>
+      </div>
+      <div class="grid2" style="margin-bottom:12px">
+        <div>
+          <div class="label">Category</div>
+          <select class="inp" id="exp-category">
+            <option value="subscription">📱 Subscription</option>
+            <option value="housing">🏠 Housing</option>
+            <option value="food">🍔 Food &amp; Dining</option>
+            <option value="transport">🚗 Transport</option>
+            <option value="utilities">💡 Utilities</option>
+            <option value="entertainment">🎮 Entertainment</option>
+            <option value="health">🏥 Health</option>
+            <option value="other">📦 Other</option>
+          </select>
+        </div>
+        <div>
+          <div class="label">Frequency</div>
+          <select class="inp" id="exp-freq">
+            <option value="monthly">Monthly</option>
+            <option value="weekly">Weekly</option>
+            <option value="yearly">Yearly</option>
+            <option value="one-time">One-Time (deducts now)</option>
+          </select>
+        </div>
+      </div>
+      <button class="btn-green" onclick="addExpense()">+ ADD EXPENSE</button>
+    </div>
+
+    <!-- Subscriptions Block -->
+    <div id="exp-subs-block" style="margin-bottom:20px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:2px;color:var(--text)">📱 SUBSCRIPTIONS</div>
+        <div id="exp-subs-total" style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:var(--orange)"></div>
+      </div>
+      <div id="exp-subs-list"></div>
+    </div>
+
+    <!-- All Other Expenses -->
+    <div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:2px;color:var(--text)">📋 ALL EXPENSES</div>
+        <div id="exp-all-total" style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:var(--blue)"></div>
+      </div>
+      <div class="table-wrap">
+        <div style="display:grid;grid-template-columns:1.8fr 1fr 1fr 1fr auto;gap:8px;padding:10px 16px;border-bottom:1px solid var(--border)">
+          <span style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--dim)">Name</span>
+          <span style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--dim)">Category</span>
+          <span style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--dim)">Frequency</span>
+          <span style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--dim)">Monthly $</span>
+          <span></span>
+        </div>
+        <div id="exp-table-body"></div>
+      </div>
+    </div>
+
+    <!-- Summary Banner -->
+    <div id="exp-summary" style="margin-top:16px"></div>
+  </div>
+
+  <!-- ══ TRANSACTION LOG ══ -->
+  <div id="tab-log" style="display:none">
+    <div class="section-title">TRANSACTION <span>LOG</span></div>
+    <div class="section-desc">Every time your balance changed — paycheques in, expenses and bill payments out.</div>
+    <div style="display:flex;justify-content:flex-end;margin-bottom:12px">
+      <button class="btn-ghost" onclick="clearLog()" style="color:var(--red);border-color:var(--red)">Clear Log</button>
+    </div>
+    <div class="table-wrap" id="log-wrap">
+      <div id="log-body"></div>
+    </div>
+    <div id="log-summary" style="margin-top:12px"></div>
+  </div>
+
+  <!-- ══ PLAN ══ -->
+  <div id="tab-plan" style="display:none">
+    <div class="section-title">YOUR <span>PLAN</span></div>
+    <div class="section-desc">Live projections based on your real data, with expenses and investments factored in.</div>
+
+    <!-- NET WORTH BANNER -->
+    <div style="background:linear-gradient(135deg,rgba(255,213,79,0.08),rgba(255,213,79,0.02));border:1px solid rgba(255,213,79,0.25);border-radius:16px;padding:20px 24px;margin-bottom:16px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px">
+      <div>
+        <div style="font-size:10px;letter-spacing:3px;text-transform:uppercase;color:var(--gold);margin-bottom:4px">Total Net Worth</div>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:52px;color:var(--gold);letter-spacing:2px;line-height:1" id="plan-networth">$0</div>
+        <div style="font-size:12px;color:var(--muted);margin-top:4px" id="plan-networth-sub">Cash + Investment Portfolio</div>
+      </div>
+      <div style="display:flex;gap:20px;flex-wrap:wrap">
+        <div style="text-align:right">
+          <div style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:2px">Cash Balance</div>
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:26px;color:var(--green)" id="plan-cash">$0</div>
+        </div>
+        <div style="text-align:right">
+          <div style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:2px">Portfolio Value</div>
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:26px;color:var(--blue)" id="plan-portval">$0</div>
+        </div>
+        <div style="text-align:right">
+          <div style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:2px">Invest. Gain/Loss</div>
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:26px" id="plan-portgain">$0</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="milestones-grid" id="milestones-grid"></div>
+
+    <!-- WHAT-IF SIMULATOR -->
+    <div class="whatif-card">
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:2px;color:var(--blue);margin-bottom:4px">🔮 WHAT-IF SIMULATOR</div>
+      <div style="font-size:12px;color:var(--muted);margin-bottom:16px">Drag the sliders to see how small changes affect your goal — no real data is changed.</div>
+      <div style="margin-bottom:14px">
+        <div style="display:flex;justify-content:space-between;margin-bottom:6px">
+          <span class="label">Extra Hours / Week</span>
+          <span style="font-family:'Bebas Neue',sans-serif;font-size:18px;color:var(--blue)" id="wi-hrs-val">+0h</span>
+        </div>
+        <input type="range" class="inp-range" id="wi-hrs" min="0" max="20" value="0" oninput="updateWhatIf()">
+      </div>
+      <div style="margin-bottom:14px">
+        <div style="display:flex;justify-content:space-between;margin-bottom:6px">
+          <span class="label">Extra Savings %</span>
+          <span style="font-family:'Bebas Neue',sans-serif;font-size:18px;color:var(--blue)" id="wi-pct-val">+0%</span>
+        </div>
+        <input type="range" class="inp-range" id="wi-pct" min="0" max="30" value="0" oninput="updateWhatIf()">
+      </div>
+      <div style="background:var(--card2);border-radius:10px;padding:14px 18px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px">
+        <div>
+          <div class="label">New Goal ETA</div>
+          <div class="whatif-result" id="wi-result">—</div>
+          <div style="font-size:12px;color:var(--muted)" id="wi-sub">Adjust sliders above</div>
+        </div>
+        <div style="text-align:right">
+          <div class="label">Extra Monthly Income</div>
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;color:var(--green)" id="wi-extra">+$0.00</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-bottom:16px">
+      <div class="label" style="margin-bottom:4px">Compound Growth Projection (XGRO ~8%/yr)</div>
+      <div style="font-size:11px;color:var(--muted);margin-bottom:12px">What your savings could grow to if invested — vs just saving cash.</div>
+      <canvas id="growth-chart" height="140" style="width:100%;display:block"></canvas>
+      <div style="display:flex;gap:16px;margin-top:10px;flex-wrap:wrap">
+        <div style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--muted)"><div style="width:20px;height:3px;background:var(--green);border-radius:2px"></div>Invested (8%/yr)</div>
+        <div style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--muted)"><div style="width:20px;height:3px;background:var(--blue);border-radius:2px;opacity:0.5"></div>Cash savings</div>
+        <div id="growth-gain" style="margin-left:auto;font-size:12px;color:var(--green)"></div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-bottom:16px">
+      <div class="label" style="margin-bottom:16px">24-Month Savings Forecast</div>
+      <div class="chart-wrap" id="chart-bars"></div>
+      <div class="chart-legend">
+        <div style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--muted)"><div class="legend-dot" style="background:var(--green)"></div>First 12 months</div>
+        <div style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--muted)"><div class="legend-dot" style="background:#1e4d3a"></div>Month 13–24</div>
+        <div style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--muted)"><div class="legend-dot" style="background:var(--gold)"></div>Goal reached</div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="label" style="margin-bottom:14px">Month-by-Month Breakdown</div>
+      <div id="month-table" style="max-height:360px;overflow-y:auto;display:flex;flex-direction:column;gap:6px"></div>
+    </div>
+  </div>
+
+  <!-- ══ INVEST ══ -->
+  <div id="tab-invest" style="display:none">
+    <div class="section-title">INVESTMENT <span>TRACKER</span></div>
+    <div class="section-desc">Track your portfolio across all stocks and ETFs. Prices update live when you hit refresh.</div>
+
+    <!-- PORTFOLIO SUMMARY -->
+    <div class="port-summary" id="port-summary">
+      <div class="port-card"><div class="label">Total Invested</div><div style="font-family:'Bebas Neue',sans-serif;font-size:28px;color:var(--blue);margin-top:4px" id="port-total-invested">$0.00</div></div>
+      <div class="port-card"><div class="label">Current Value</div><div style="font-family:'Bebas Neue',sans-serif;font-size:28px;color:var(--green);margin-top:4px" id="port-current-val">$0.00</div></div>
+      <div class="port-card"><div class="label">Total Gain / Loss</div><div style="font-family:'Bebas Neue',sans-serif;font-size:28px;margin-top:4px" id="port-gain-loss">$0.00</div></div>
+    </div>
+
+    <!-- ADD HOLDING -->
+    <div class="card" style="margin-bottom:16px">
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:2px;color:var(--text);margin-bottom:12px">➕ ADD HOLDING</div>
+      <div class="grid3" style="margin-bottom:12px">
+        <div>
+          <div class="label">Ticker Symbol</div>
+          <input class="inp" id="inv-ticker-inp" placeholder="e.g. XGRO.TO" style="text-transform:uppercase" oninput="this.value=this.value.toUpperCase()">
+        </div>
+        <div>
+          <div class="label">Shares Owned</div>
+          <input class="inp" type="number" id="inv-shares" placeholder="e.g. 12.5">
+        </div>
+        <div>
+          <div class="label">Avg Buy Price ($)</div>
+          <input class="inp" type="number" id="inv-buy-price" placeholder="e.g. 28.50">
+        </div>
+      </div>
+      <div class="grid2" style="margin-bottom:12px">
+        <div>
+          <div class="label">Current Price ($) <span style="color:var(--muted);font-size:10px">— leave blank to fetch live</span></div>
+          <input class="inp" type="number" id="inv-current-price" placeholder="Auto-fetch or enter manually">
+        </div>
+        <div>
+          <div class="label">Exchange / Notes</div>
+          <input class="inp" id="inv-notes" placeholder="e.g. TSX · TFSA">
+        </div>
+      </div>
+      <div style="margin-bottom:12px;padding:12px 14px;background:var(--card2);border-radius:10px;border:1px solid #2a2a2a">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+          <span style="font-size:13px;color:var(--text)">Deduct cost from my cash balance</span>
+          <label class="toggle"><input type="checkbox" id="inv-deduct" checked><span class="slider"></span></label>
+        </div>
+        <div style="font-size:12px;color:var(--muted);line-height:1.6" id="inv-deduct-desc">When enabled, the total cost (shares × buy price) will be subtracted from your savings balance automatically.</div>
+      </div>
+      <button class="btn-green" onclick="addHolding()">+ ADD TO PORTFOLIO</button>
+    </div>
+
+    <!-- HOLDINGS TABLE -->
+    <div id="holdings-wrap" style="display:none;margin-bottom:20px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+        <div class="label" style="margin-bottom:0">YOUR HOLDINGS</div>
+        <button class="refresh-btn" onclick="refreshAllPrices()">🔄 REFRESH PRICES</button>
+      </div>
+      <div class="table-wrap">
+        <div class="table-head" style="display:grid;grid-template-columns:2fr 1fr 1fr 1fr 1fr auto;gap:8px">
+          <span>Ticker</span><span>Shares</span><span>Buy Price</span><span>Current</span><span>Gain/Loss</span><span></span>
+        </div>
+        <div id="holdings-body"></div>
+      </div>
+      <!-- ALLOCATION BREAKDOWN -->
+      <div class="card" style="margin-top:12px" id="port-alloc-card">
+        <div class="label" style="margin-bottom:12px">Portfolio Allocation</div>
+        <div id="port-alloc-bars"></div>
+        <div id="port-alloc-bar-strip" style="height:10px;border-radius:99px;overflow:hidden;display:flex;margin-top:8px"></div>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+    <div class="section-title" style="font-size:28px">WHAT TO <span>INVEST IN</span></div>
+    <div class="section-desc">All available free on Wealthsimple in your TFSA. Low risk, long-term growth.</div>
+
+    <div class="card" style="margin-bottom:20px">
+      <div class="label" style="margin-bottom:14px">Recommended Portfolio Split</div>
+      <div class="alloc-grid">
+        <div class="alloc-card" style="border:1px solid rgba(0,230,118,0.15)">
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:26px;color:var(--green);letter-spacing:2px">XGRO</div>
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:32px;color:var(--text);margin:4px 0">70%</div>
+          <div style="font-size:11px;color:var(--muted);letter-spacing:1px;text-transform:uppercase">Core</div>
+        </div>
+        <div class="alloc-card" style="border:1px solid rgba(255,213,79,0.15)">
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:26px;color:var(--gold);letter-spacing:2px">ZSP</div>
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:32px;color:var(--text);margin:4px 0">20%</div>
+          <div style="font-size:11px;color:var(--muted);letter-spacing:1px;text-transform:uppercase">Growth</div>
+        </div>
+        <div class="alloc-card" style="border:1px solid rgba(100,181,246,0.15)">
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:26px;color:var(--blue);letter-spacing:2px">XBB</div>
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:32px;color:var(--text);margin:4px 0">10%</div>
+          <div style="font-size:11px;color:var(--muted);letter-spacing:1px;text-transform:uppercase">Safety</div>
+        </div>
+      </div>
+      <div class="alloc-bar" style="margin-top:16px">
+        <div style="width:70%;background:var(--green);height:100%"></div>
+        <div style="width:20%;background:var(--gold);height:100%"></div>
+        <div style="width:10%;background:var(--blue);height:100%"></div>
+      </div>
+    </div>
+
+    <!-- XGRO -->
+    <div class="inv-card" id="inv-xgro" style="border-color:var(--border)" onclick="toggleInv('xgro')">
+      <div class="inv-header">
+        <div class="inv-ticker" style="color:var(--green)">XGRO</div>
+        <div style="flex:1"><div style="font-size:13px;font-weight:500">iShares Core Growth ETF Portfolio</div><div style="font-size:12px;color:var(--muted);margin-top:2px">ETF — 80% Stocks / 20% Bonds</div></div>
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px">
+          <span style="font-size:10px;letter-spacing:1.5px;text-transform:uppercase;padding:3px 10px;border-radius:99px;background:rgba(255,213,79,0.1);color:var(--gold);border:1px solid rgba(255,213,79,0.3)">⭐ Start Here</span>
+          <span id="arr-xgro" style="font-size:18px;color:var(--dim)">▼</span>
+        </div>
+      </div>
+      <div id="body-xgro" style="display:none" class="inv-body">
+        <div class="inv-desc">One fund holding thousands of global stocks + bonds. Auto-rebalances. Perfect first investment for low-risk, long-term growth.</div>
+        <div class="label">What's Inside</div>
+        <div class="holding-row"><span style="font-size:13px;flex:1">🇺🇸 US Stocks (Apple, Microsoft, Nvidia...)</span><div class="hold-bar"><div class="hold-fill" style="width:45%;background:var(--green)"></div></div><span style="font-size:12px;color:var(--muted);min-width:36px;text-align:right">45%</span></div>
+        <div class="holding-row"><span style="font-size:13px;flex:1">🌍 International Stocks (Europe, Japan...)</span><div class="hold-bar"><div class="hold-fill" style="width:25%;background:var(--green)"></div></div><span style="font-size:12px;color:var(--muted);min-width:36px;text-align:right">25%</span></div>
+        <div class="holding-row"><span style="font-size:13px;flex:1">🇨🇦 Canadian Stocks (RBC, TD, Shopify...)</span><div class="hold-bar"><div class="hold-fill" style="width:10%;background:var(--green)"></div></div><span style="font-size:12px;color:var(--muted);min-width:36px;text-align:right">10%</span></div>
+        <div class="holding-row"><span style="font-size:13px;flex:1">🏛️ Government & Corporate Bonds</span><div class="hold-bar"><div class="hold-fill" style="width:20%;background:var(--blue)"></div></div><span style="font-size:12px;color:var(--muted);min-width:36px;text-align:right">20%</span></div>
+        <div style="margin-top:14px;padding:12px 16px;background:var(--card2);border-radius:10px;font-size:12px;color:var(--muted)">Risk level: <span style="color:var(--green)">Low-Medium</span> · Available on Wealthsimple · Trades in CAD on the TSX</div>
+      </div>
+    </div>
+
+    <!-- ZSP -->
+    <div class="inv-card" id="inv-zsp" style="border-color:var(--border)" onclick="toggleInv('zsp')">
+      <div class="inv-header">
+        <div class="inv-ticker" style="color:var(--gold)">ZSP</div>
+        <div style="flex:1"><div style="font-size:13px;font-weight:500">BMO S&P 500 Index ETF</div><div style="font-size:12px;color:var(--muted);margin-top:2px">ETF — 500 Biggest US Companies</div></div>
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px">
+          <span style="font-size:10px;letter-spacing:1.5px;text-transform:uppercase;padding:3px 10px;border-radius:99px;background:rgba(255,183,77,0.1);color:var(--orange);border:1px solid rgba(255,183,77,0.3)">Add at $1,000</span>
+          <span id="arr-zsp" style="font-size:18px;color:var(--dim)">▼</span>
+        </div>
+      </div>
+      <div id="body-zsp" style="display:none" class="inv-body">
+        <div class="inv-desc">Tracks the S&P 500 in CAD. ~10%/yr historically. Add this once you hit $1,000 invested to boost your US growth exposure.</div>
+        <div class="label">Top Companies Inside ZSP</div>
+        <div class="holding-row"><span style="font-size:13px;flex:1">Apple (AAPL)</span><div class="hold-bar"><div class="hold-fill" style="width:72%;background:var(--gold)"></div></div><span style="font-size:12px;color:var(--muted);min-width:36px;text-align:right">7.2%</span></div>
+        <div class="holding-row"><span style="font-size:13px;flex:1">Microsoft (MSFT)</span><div class="hold-bar"><div class="hold-fill" style="width:67%;background:var(--gold)"></div></div><span style="font-size:12px;color:var(--muted);min-width:36px;text-align:right">6.7%</span></div>
+        <div class="holding-row"><span style="font-size:13px;flex:1">Nvidia (NVDA)</span><div class="hold-bar"><div class="hold-fill" style="width:62%;background:var(--gold)"></div></div><span style="font-size:12px;color:var(--muted);min-width:36px;text-align:right">6.2%</span></div>
+        <div class="holding-row"><span style="font-size:13px;flex:1">Amazon (AMZN)</span><div class="hold-bar"><div class="hold-fill" style="width:40%;background:var(--gold)"></div></div><span style="font-size:12px;color:var(--muted);min-width:36px;text-align:right">4.0%</span></div>
+        <div class="holding-row"><span style="font-size:13px;flex:1">Alphabet/Google (GOOGL)</span><div class="hold-bar"><div class="hold-fill" style="width:35%;background:var(--gold)"></div></div><span style="font-size:12px;color:var(--muted);min-width:36px;text-align:right">3.5%</span></div>
+        <div class="holding-row"><span style="font-size:13px;flex:1">+ 495 other US companies</span><div class="hold-bar"><div class="hold-fill" style="width:100%;background:var(--gold)"></div></div><span style="font-size:12px;color:var(--muted);min-width:36px;text-align:right">rest</span></div>
+        <div style="margin-top:14px;padding:12px 16px;background:var(--card2);border-radius:10px;font-size:12px;color:var(--muted)">Risk level: <span style="color:var(--gold)">Medium</span> · Available on Wealthsimple · Trades in CAD on the TSX</div>
+      </div>
+    </div>
+
+    <!-- XBB -->
+    <div class="inv-card" id="inv-xbb" style="border-color:var(--border)" onclick="toggleInv('xbb')">
+      <div class="inv-header">
+        <div class="inv-ticker" style="color:var(--blue)">XBB</div>
+        <div style="flex:1"><div style="font-size:13px;font-weight:500">iShares Core Canadian Bond Index ETF</div><div style="font-size:12px;color:var(--muted);margin-top:2px">Bonds — Canadian Gov & Corporate</div></div>
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px">
+          <span style="font-size:10px;letter-spacing:1.5px;text-transform:uppercase;padding:3px 10px;border-radius:99px;background:rgba(100,181,246,0.1);color:var(--blue);border:1px solid rgba(100,181,246,0.3)">For Stability</span>
+          <span id="arr-xbb" style="font-size:18px;color:var(--dim)">▼</span>
+        </div>
+      </div>
+      <div id="body-xbb" style="display:none" class="inv-body">
+        <div class="inv-desc">Pure Canadian bonds. Very stable. You already get 20% bonds in XGRO — add XBB only if you want extra safety as your portfolio grows.</div>
+        <div class="label">What's Inside XBB</div>
+        <div class="holding-row"><span style="font-size:13px;flex:1">🇨🇦 Government of Canada Bonds</span><div class="hold-bar"><div class="hold-fill" style="width:42%;background:var(--blue)"></div></div><span style="font-size:12px;color:var(--muted);min-width:36px;text-align:right">42%</span></div>
+        <div class="holding-row"><span style="font-size:13px;flex:1">🏛️ Provincial Bonds (ON, BC, AB...)</span><div class="hold-bar"><div class="hold-fill" style="width:34%;background:var(--blue)"></div></div><span style="font-size:12px;color:var(--muted);min-width:36px;text-align:right">34%</span></div>
+        <div class="holding-row"><span style="font-size:13px;flex:1">🏦 Corporate Bonds (Banks, utilities...)</span><div class="hold-bar"><div class="hold-fill" style="width:24%;background:var(--blue)"></div></div><span style="font-size:12px;color:var(--muted);min-width:36px;text-align:right">24%</span></div>
+        <div style="margin-top:14px;padding:12px 16px;background:var(--card2);border-radius:10px;font-size:12px;color:var(--muted)">Risk level: <span style="color:var(--blue)">Low</span> · Available on Wealthsimple · Trades in CAD on the TSX</div>
+      </div>
+    </div>
+
+    <div class="card" style="background:rgba(0,230,118,0.04);border-color:rgba(0,230,118,0.2);margin-top:8px">
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:2px;color:var(--green);margin-bottom:8px">WHY A TFSA?</div>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <div style="display:flex;gap:10px;font-size:13px;color:var(--muted);line-height:1.5"><span style="color:var(--green);flex-shrink:0">✓</span>Every dollar of growth — dividends, capital gains — is 100% tax-free forever.</div>
+        <div style="display:flex;gap:10px;font-size:13px;color:var(--muted);line-height:1.5"><span style="color:var(--green);flex-shrink:0">✓</span>You can withdraw anytime with no penalty.</div>
+        <div style="display:flex;gap:10px;font-size:13px;color:var(--muted);line-height:1.5"><span style="color:var(--green);flex-shrink:0">✓</span>2026 contribution room: $7,000. You're well within limits.</div>
+        <div style="display:flex;gap:10px;font-size:13px;color:var(--muted);line-height:1.5"><span style="color:var(--green);flex-shrink:0">✓</span>Best account for young Canadians building long-term wealth.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ TOOLS ══ -->
+  <div id="tab-tools" style="display:none">
+    <div class="section-title">MONEY <span>TOOLS</span></div>
+    <div class="section-desc">Quick calculators to make smarter spending decisions.</div>
+
+    <!-- HOURS-TO-PURCHASE -->
+    <div class="tool-card">
+      <div class="tool-title">⏱ HOURS OF YOUR LIFE</div>
+      <div class="tool-subtitle">Type any price — see how many hours of work it really costs you.</div>
+      <div class="grid2">
+        <div>
+          <div class="label">Item Price ($)</div>
+          <input class="inp" type="number" id="htp-price" placeholder="e.g. 120.00" oninput="calcHoursToPrice()">
+        </div>
+        <div>
+          <div class="label">Item Name (optional)</div>
+          <input class="inp" id="htp-name" placeholder="e.g. New shoes" oninput="calcHoursToPrice()">
+        </div>
+      </div>
+      <div id="htp-result" style="display:none;margin-top:4px">
+        <div class="hours-result" id="htp-hours">0h</div>
+        <div class="hours-sub" id="htp-sub"></div>
+        <div style="margin-top:16px;padding:12px 16px;background:var(--card2);border-radius:10px;font-size:12px;color:var(--muted);text-align:center" id="htp-context"></div>
+      </div>
+    </div>
+
+    <!-- HOW LONG TO AFFORD -->
+    <div class="tool-card">
+      <div class="tool-title">🎯 HOW LONG TO AFFORD IT?</div>
+      <div class="tool-subtitle">How many months of saving until you can buy something — without touching your goal.</div>
+      <div class="grid2" style="margin-bottom:0">
+        <div>
+          <div class="label">Target Price ($)</div>
+          <input class="inp" type="number" id="aff-price" placeholder="e.g. 500" oninput="calcAfford()">
+        </div>
+        <div>
+          <div class="label">Save separately (%)</div>
+          <input class="inp" type="number" id="aff-pct" placeholder="e.g. 10" value="10" oninput="calcAfford()">
+        </div>
+      </div>
+      <div id="aff-result" style="display:none;margin-top:16px;padding:14px 18px;background:var(--card2);border-radius:12px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px">
+        <div>
+          <div class="label">Months Away</div>
+          <div class="afford-result" id="aff-months" style="color:var(--gold)">—</div>
+        </div>
+        <div style="text-align:right">
+          <div class="label">Side Savings / Mo</div>
+          <div class="afford-result" id="aff-monthly" style="color:var(--green)">—</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RAISE CALCULATOR -->
+    <div class="tool-card">
+      <div class="tool-title">📈 RAISE CALCULATOR</div>
+      <div class="tool-subtitle">What would a raise actually put in your pocket per month?</div>
+      <div class="grid2">
+        <div>
+          <div class="label">New Hourly Rate ($)</div>
+          <input class="inp" type="number" id="raise-rate" placeholder="e.g. 18.00" oninput="calcRaise()">
+        </div>
+        <div>
+          <div class="label">Avg Hours / Paycheque</div>
+          <input class="inp" type="number" id="raise-hrs" placeholder="e.g. 40" oninput="calcRaise()">
+        </div>
+      </div>
+      <div id="raise-result" style="display:none;margin-top:4px;padding:14px 18px;background:var(--card2);border-radius:12px">
+        <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px">
+          <div><div class="label">Extra / Paycheque</div><div style="font-family:'Bebas Neue',sans-serif;font-size:28px;color:var(--green)" id="raise-per-pay">—</div></div>
+          <div><div class="label">Extra / Month</div><div style="font-family:'Bebas Neue',sans-serif;font-size:28px;color:var(--blue)" id="raise-per-month">—</div></div>
+          <div><div class="label">Extra / Year</div><div style="font-family:'Bebas Neue',sans-serif;font-size:28px;color:var(--gold)" id="raise-per-year">—</div></div>
+        </div>
+        <div style="margin-top:10px;font-size:12px;color:var(--muted)" id="raise-goal-impact"></div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /main -->
+
+<div class="footer">
+  General financial education only — not official financial advice.<br>
+  Consider speaking with a licensed advisor as your portfolio grows.
+</div>
+
+<script>
+// ── STATE ──────────────────────────────────────────────────────────────
+const MONTH_NAMES = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+const TYPE_ICONS = { paycheque:"💳", cash:"💵", etransfer:"📲", other:"📦" };
+
+let state = {
+  name: "Christopher",
+  rate: 16.5,
+  baseSavings: 410,
+  goal: 5000,
+  alertThreshold: 100,
+  strategy: "auto",
+  customPct: 20,
+  lightMode: false,
+  expenses: [],
+  nextExpId: 1,
+  paystubs: [
+    { id: 1, date: "Apr 10", hours: 3.5, net: 58.26, type: "paycheque", source: "" },
+    { id: 2, date: "Apr 24", hours: 9.25, net: 153.99, type: "paycheque", source: "" },
+    { id: 3, date: "May 8", hours: 5.5, net: 94.43, type: "paycheque", source: "" },
+  ],
+  nextId: 10,
+  txLog: [],
+  nextTxId: 1,
+  lastPayDate: "",
+  worstCasePay: 0,
+  deductions: [],
+  nextDedId: 1,
+  saveChecks: {},
+  holdings: [],
+  nextHoldingId: 1,
+};
+
+function computeBalance() {
+  const income = state.paystubs.reduce((s, p) => s + p.net, 0);
+  const oneTime = (state.expenses || []).filter(e => e.freq === "one-time").reduce((s, e) => s + e.amount, 0);
+  const billsPaid = state.txLog.filter(t => t.kind === "bills").reduce((s, t) => s + t.amount, 0);
+  const invested = state.txLog.filter(t => t.kind === "investment").reduce((s, t) => s + t.amount, 0);
+  return state.baseSavings + income - oneTime - billsPaid - invested;
+}
+
+function saveState() {
+  try { localStorage.setItem("wealthbuilder_v5", JSON.stringify(state)); } catch(e) {}
+}
+function loadState() {
+  try {
+    const s = localStorage.getItem("wealthbuilder_v5");
+    if (s) state = Object.assign(state, JSON.parse(s));
+  } catch(e) {}
+}
+
+// ── HELPERS ────────────────────────────────────────────────────────────
+const fmt = n => "$" + Number(n).toLocaleString("en-CA", {minimumFractionDigits:2, maximumFractionDigits:2});
+const fmtInt = n => "$" + Math.round(n).toLocaleString("en-CA");
+function paidHours(h) { return h; }
+
+function nowStr() {
+  const d = new Date();
+  return d.toLocaleDateString("en-CA", {month:"short", day:"numeric", hour:"2-digit", minute:"2-digit"});
+}
+
+function getSavingsPct(net) {
+  if (state.strategy === "custom") return state.customPct / 100;
+  if (net < 75) return 0.10;
+  if (net <= 150) return 0.20;
+  return 0.25;
+}
+
+function getPortfolioValue() {
+  return state.holdings.reduce((s,h) => s + h.shares * (h.currentPrice || h.buyPrice), 0);
+}
+
+function getPortfolioInvested() {
+  return state.holdings.reduce((s,h) => s + h.shares * h.buyPrice, 0);
+}
+
+function getNetWorth() {
+  return state.savings + getPortfolioValue();
+}
+
+function getProjection() {
+  let bal = state.savings;
+  const pcOnly2 = state.paystubs.filter(p => p.type === "paycheque" || !p.type);
+  const avgNet = pcOnly2.length ? pcOnly2.reduce((s,p)=>s+p.net,0)/pcOnly2.length : 102;
+  // If worst-case set, use blended average for conservative projection
+  const worstNet = state.worstCasePay || 0;
+  const blendedNet = worstNet > 0 ? (avgNet + worstNet) / 2 : avgNet;
+  const monthly = blendedNet * 2 * getSavingsPct(blendedNet);
+  const now = new Date();
+  const months = [];
+  for (let i = 0; i < 24; i++) {
+    const d = new Date(now.getFullYear(), now.getMonth()+i, 1);
+    bal += monthly;
+    months.push({ month: MONTH_NAMES[d.getMonth()], year: d.getFullYear(), total: bal, saved: monthly });
+  }
+  return months;
+}
+
+// ── THEME ──────────────────────────────────────────────────────────────
+function toggleTheme() {
+  state.lightMode = !state.lightMode;
+  applyTheme();
+  saveState();
+}
+function applyTheme() {
+  document.body.classList.toggle("light", state.lightMode);
+  document.querySelector(".theme-btn").textContent = state.lightMode ? "🌙" : "☀";
+}
+
+// ── TAB SWITCHING ──────────────────────────────────────────────────────
+let activeTab = "setup";
+function switchTab(tab) {
+  ["setup","paystubs","expenses","log","plan","invest","tools"].forEach(t => {
+    document.getElementById("tab-"+t).style.display = t===tab ? "" : "none";
+  });
+  // Update bottom nav
+  ["setup","paystubs","expenses","plan","invest","log","tools"].forEach(t => {
+    const btn = document.getElementById("nav-"+t);
+    if (btn) btn.className = "nav-btn" + (t===tab ? " active" : "");
+  });
+  activeTab = tab;
+  haptic(20);
+  if (tab === "plan") { renderPlan(); updateWhatIf(); setTimeout(renderGrowthChart,50); }
+  if (tab === "paystubs") { renderStubs(); renderSaveChecks(); renderDeductions(); }
+  if (tab === "expenses") { renderExpenses(); renderCalendar(); }
+  if (tab === "log") renderLog();
+  if (tab === "invest") renderHoldings();
+}
+
+// ── STRATEGY ──────────────────────────────────────────────────────────
+function setStrategy(s) {
+  state.strategy = s;
+  document.getElementById("auto-tiers").style.display = s==="auto" ? "" : "none";
+  document.getElementById("custom-tier").style.display = s==="custom" ? "" : "none";
+  document.getElementById("pill-auto").style.cssText = s==="auto"
+    ? "background:var(--green);color:var(--black);border-color:var(--green)"
+    : "background:transparent;color:var(--muted);border-color:var(--border)";
+  document.getElementById("pill-custom").style.cssText = s==="custom"
+    ? "background:var(--green);color:var(--black);border-color:var(--green)"
+    : "background:transparent;color:var(--muted);border-color:var(--border)";
+  updateAll();
+}
+
+// ── INVESTMENTS ──────────────────────────────────────────────────────
+function toggleInv(id) {
+  const body = document.getElementById("body-"+id);
+  const arr = document.getElementById("arr-"+id);
+  const card = document.getElementById("inv-"+id);
+  const colors = {xgro:"#00e676",zsp:"#ffd54f",xbb:"#64b5f6"};
+  const open = body.style.display === "";
+  body.style.display = open ? "none" : "";
+  arr.textContent = open ? "▼" : "▲";
+  arr.style.color = open ? "var(--dim)" : colors[id];
+  card.style.borderColor = open ? "var(--border)" : colors[id]+"44";
+}
+
+// ── EXPENSES ──────────────────────────────────────────────────────────
+const CAT_ICONS = { subscription:"📱", housing:"🏠", food:"🍔", transport:"🚗", utilities:"💡", entertainment:"🎮", health:"🏥", other:"📦" };
+const CAT_LABELS = { subscription:"Subscription", housing:"Housing", food:"Food & Dining", transport:"Transport", utilities:"Utilities", entertainment:"Entertainment", health:"Health", other:"Other" };
+const FREQ_LABELS = { monthly:"Monthly", weekly:"Weekly", yearly:"Yearly", "one-time":"One-Time" };
+
+function toMonthly(amount, freq) {
+  if (freq === "weekly") return amount * 52 / 12;
+  if (freq === "yearly") return amount / 12;
+  if (freq === "one-time") return 0;
+  return amount;
+}
+
+function addExpense() {
+  const name = document.getElementById("exp-name").value.trim();
+  const amount = parseFloat(document.getElementById("exp-amount").value);
+  if (!name || !amount) return;
+  const category = document.getElementById("exp-category").value;
+  const freq = document.getElementById("exp-freq").value;
+  pushUndo();
+  state.expenses.push({ id: state.nextExpId++, name, amount, category, freq });
+  document.getElementById("exp-name").value = "";
+  document.getElementById("exp-amount").value = "";
+  if (freq === "one-time") {
+    addTxLog({ kind:"expense", label: CAT_ICONS[category]+" "+name, amount, dir:"out", note:"One-time" });
+  }
+  saveState();
+  updateAll();
+  renderExpenses();
+  showToast(CAT_ICONS[category]+" "+name+" added");
+}
+
+function removeExpense(id) {
+  state.expenses = state.expenses.filter(e => e.id !== id);
+  saveState();
+  updateAll();
+  renderExpenses();
+}
+
+function renderExpenses() {
+  if (!state.expenses.length) {
+    document.getElementById("exp-subs-list").innerHTML = '<div class="table-empty" style="padding:16px;text-align:center;color:var(--dim);font-size:13px">No subscriptions yet.</div>';
+    document.getElementById("exp-table-body").innerHTML = '<div class="table-empty">No expenses added yet.</div>';
+    document.getElementById("exp-subs-total").textContent = "";
+    document.getElementById("exp-all-total").textContent = "";
+    document.getElementById("exp-summary").innerHTML = "";
+    return;
+  }
+
+  const subs = state.expenses.filter(e => e.category === "subscription");
+  const subMonthly = subs.reduce((s,e) => s + toMonthly(e.amount, e.freq), 0);
+  const allMonthly = state.expenses.reduce((s,e) => s + toMonthly(e.amount, e.freq), 0);
+
+  document.getElementById("exp-subs-total").textContent = fmt(subMonthly) + "/mo";
+  if (subs.length === 0) {
+    document.getElementById("exp-subs-list").innerHTML = '<div style="font-size:13px;color:var(--dim);padding:12px 0">No subscriptions added yet.</div>';
+  } else {
+    document.getElementById("exp-subs-list").innerHTML = subs.map(e => {
+      const mo = toMonthly(e.amount, e.freq);
+      return `<div class="card" style="display:flex;align-items:center;gap:14px;padding:14px 18px;margin-bottom:8px">
+        <div style="font-size:22px">📱</div>
+        <div style="flex:1">
+          <div style="font-size:14px;font-weight:500">${e.name}</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:2px">${fmt(e.amount)} / ${FREQ_LABELS[e.freq]}${e.freq!=='monthly'&&e.freq!=='one-time' ? ' · '+fmt(mo)+'/mo' : ''}</div>
+        </div>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:var(--orange)">${fmt(mo)}/mo</div>
+        <button class="btn-ghost" onclick="removeExpense(${e.id})">✕</button>
+      </div>`;
+    }).join("");
+  }
+
+  document.getElementById("exp-all-total").textContent = fmt(allMonthly) + "/mo";
+  document.getElementById("exp-table-body").innerHTML = state.expenses.map(e => {
+    const mo = toMonthly(e.amount, e.freq);
+    const isOneTime = e.freq === "one-time";
+    return `<div style="display:grid;grid-template-columns:1.8fr 1fr 1fr 1fr auto;gap:8px;padding:12px 16px;border-bottom:1px solid var(--card2);align-items:center;animation:rowIn 0.3s ease">
+      <span style="font-size:13px">${CAT_ICONS[e.category]} ${e.name}</span>
+      <span style="font-size:12px;color:var(--muted)">${CAT_LABELS[e.category]}</span>
+      <span style="font-size:12px;color:var(--muted)">${FREQ_LABELS[e.freq]}</span>
+      <span style="font-size:13px;color:${isOneTime?'var(--red)':'var(--blue)'};">${isOneTime?'-'+fmt(e.amount):fmt(mo)}</span>
+      <button class="btn-ghost" onclick="removeExpense(${e.id})">✕</button>
+    </div>`;
+  }).join("");
+
+  const cats = {};
+  state.expenses.forEach(e => { cats[e.category] = (cats[e.category]||0) + toMonthly(e.amount, e.freq); });
+  const pcExp = state.paystubs.filter(p => p.type === "paycheque" || !p.type);
+  const avgNet = pcExp.length ? pcExp.reduce((s,p)=>s+p.net,0)/pcExp.length : 0;
+  const leftover = avgNet > 0 ? avgNet * 2 - allMonthly : null;
+  const oneTimeTotal = state.expenses.filter(e=>e.freq==='one-time').reduce((s,e)=>s+e.amount,0);
+
+  document.getElementById("exp-summary").innerHTML = `
+    <div class="summary-banner" style="margin-bottom:16px">
+      <div>
+        <div class="label">Total Monthly Expenses</div>
+        <div class="val-big" style="color:var(--blue)">${fmt(allMonthly)}</div>
+        <div style="font-size:12px;color:var(--muted);margin-top:4px">Subscriptions: ${fmt(subMonthly)}/mo</div>
+        ${oneTimeTotal > 0 ? `<div style="font-size:12px;color:var(--red);margin-top:2px">One-time deducted: -${fmt(oneTimeTotal)}</div>` : ""}
+      </div>
+      ${leftover !== null ? `<div style="text-align:right">
+        <div class="label">Est. Monthly Leftover</div>
+        <div class="val-big" style="color:${leftover>=0?'var(--green)':'var(--red)'}">${fmt(Math.abs(leftover))}</div>
+        <div style="font-size:12px;color:var(--muted);margin-top:4px">${leftover>=0?'after expenses':'over budget'}</div>
+      </div>` : ""}
+    </div>
+    <div class="card">
+      <div class="label" style="margin-bottom:12px">Spending by Category</div>
+      <div class="donut-wrap">
+        <canvas id="donut-canvas" width="130" height="130" style="flex-shrink:0"></canvas>
+        <div class="donut-legend" id="donut-legend"></div>
+      </div>
+    </div>`;
+
+  // Draw donut chart
+  const catColors = {subscription:"#ffb74d",housing:"#00e676",food:"#ff7043",transport:"#ffd54f",utilities:"#64b5f6",entertainment:"#ce93d8",health:"#80cbc4",other:"#888"};
+  const catEntries = Object.entries(cats).sort((a,b)=>b[1]-a[1]);
+  const canvas = document.getElementById("donut-canvas");
+  if (canvas) {
+    const ctx = canvas.getContext("2d");
+    const cx=65,cy=65,r=52,inner=32;
+    ctx.clearRect(0,0,130,130);
+    let startAngle = -Math.PI/2;
+    catEntries.forEach(([cat,mo]) => {
+      const slice = allMonthly > 0 ? (mo/allMonthly)*Math.PI*2 : 0;
+      const color = catColors[cat]||"#888";
+      ctx.beginPath();
+      ctx.moveTo(cx,cy);
+      ctx.arc(cx,cy,r,startAngle,startAngle+slice);
+      ctx.closePath();
+      ctx.fillStyle = color;
+      ctx.fill();
+      startAngle += slice;
+    });
+    // Inner hole
+    ctx.beginPath();
+    ctx.arc(cx,cy,inner,0,Math.PI*2);
+    ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--card').trim() || '#111';
+    ctx.fill();
+    // Center label
+    ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--text').trim() || '#efefef';
+    ctx.font = "bold 11px 'DM Sans', sans-serif";
+    ctx.textAlign="center";
+    ctx.textBaseline="middle";
+    ctx.fillText(fmt(allMonthly).replace(".00",""), cx, cy-6);
+    ctx.font = "9px 'DM Sans', sans-serif";
+    ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--muted').trim() || '#666';
+    ctx.fillText("/mo", cx, cy+8);
+  }
+  document.getElementById("donut-legend").innerHTML = catEntries.map(([cat,mo]) => {
+    const pct = allMonthly > 0 ? Math.round((mo/allMonthly)*100) : 0;
+    return `<div class="donut-legend-row">
+      <div class="donut-dot" style="background:${catColors[cat]||'#888'}"></div>
+      <span>${CAT_ICONS[cat]} ${CAT_LABELS[cat]}</span>
+      <span style="margin-left:auto;color:var(--text)">${pct}%</span>
+    </div>`;
+  }).join("");
+}
+
+// ── PAY BILLS MODAL ────────────────────────────────────────────────────
+function openBillsModal() {
+  const recurring = state.expenses.filter(e => e.freq !== "one-time");
+  if (!recurring.length) { alert("No recurring expenses added yet."); return; }
+  document.getElementById("bills-list").innerHTML = recurring.map(e => {
+    const mo = toMonthly(e.amount, e.freq);
+    return `<label style="display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--border);cursor:pointer">
+      <input type="checkbox" data-id="${e.id}" data-amount="${mo.toFixed(2)}" data-name="${e.name}" style="width:18px;height:18px;accent-color:var(--green)" checked>
+      <span style="flex:1;font-size:14px">${CAT_ICONS[e.category]} ${e.name}</span>
+      <span style="font-family:'Bebas Neue',sans-serif;font-size:18px;color:var(--red)">-${fmt(mo)}</span>
+    </label>`;
+  }).join("");
+  document.getElementById("bills-modal").classList.add("open");
+}
+
+function closeBillsModal() {
+  document.getElementById("bills-modal").classList.remove("open");
+}
+
+function paySelectedBills() {
+  const checks = document.querySelectorAll("#bills-list input[type=checkbox]:checked");
+  if (!checks.length) { closeBillsModal(); return; }
+  pushUndo();
+  let total = 0;
+  const names = [];
+  checks.forEach(cb => {
+    total += parseFloat(cb.dataset.amount);
+    names.push(cb.dataset.name);
+  });
+  addTxLog({ kind:"bills", label: "Bills: " + names.join(", "), amount: total, dir:"out", note: nowStr() });
+  saveState();
+  updateAll();
+  renderLog();
+  closeBillsModal();
+  showToast("💸 Bills paid — -" + fmt(total));
+}
+
+// ── TRANSACTION LOG ────────────────────────────────────────────────────
+function addTxLog(entry) {
+  state.txLog.unshift({ id: state.nextTxId++, ts: nowStr(), ...entry });
+  if (state.txLog.length > 200) state.txLog = state.txLog.slice(0,200);
+}
+
+function clearLog() {
+  if (!confirm("Clear the entire transaction log? This won't change your balance.")) return;
+  state.txLog = [];
+  state.nextTxId = 1;
+  saveState();
+  renderLog();
+}
+
+function renderLog() {
+  const body = document.getElementById("log-body");
+  if (!state.txLog.length) {
+    body.innerHTML = '<div class="table-empty">No transactions yet. Add a paycheque or pay some bills!</div>';
+    document.getElementById("log-summary").innerHTML = "";
+    return;
+  }
+  body.innerHTML = state.txLog.map(t => {
+    const isIn = t.dir === "in";
+    return `<div class="tx-row">
+      <div class="tx-icon ${isIn?'tx-in':'tx-out'}">${isIn?'↑':'↓'}</div>
+      <div style="flex:1">
+        <div style="font-size:13px;font-weight:500">${t.label}</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:2px">${t.ts}${t.note&&t.note!==t.ts?' · '+t.note:''}</div>
+      </div>
+      <div class="${isIn?'tx-amount-in':'tx-amount-out'}">${isIn?'+':'-'}${fmt(t.amount)}</div>
+    </div>`;
+  }).join("");
+
+  const totalIn = state.txLog.filter(t=>t.dir==="in").reduce((s,t)=>s+t.amount,0);
+  const totalOut = state.txLog.filter(t=>t.dir==="out").reduce((s,t)=>s+t.amount,0);
+  document.getElementById("log-summary").innerHTML = `
+    <div class="grid2" style="margin-bottom:0">
+      <div class="stat-card"><div class="label">Total In (logged)</div><div style="font-family:'Bebas Neue',sans-serif;font-size:24px;color:var(--green);margin-top:4px">+${fmt(totalIn)}</div></div>
+      <div class="stat-card"><div class="label">Total Out (logged)</div><div style="font-family:'Bebas Neue',sans-serif;font-size:24px;color:var(--red);margin-top:4px">-${fmt(totalOut)}</div></div>
+    </div>`;
+}
+
+// ── PAYSTUBS ──────────────────────────────────────────────────────────
+function addPaystub() {
+  const hours = parseFloat(document.getElementById("new-hours").value) || 0;
+  const date = document.getElementById("new-date").value || nowStr();
+  const netInput = document.getElementById("new-net").value;
+  const source = document.getElementById("new-source").value.trim();
+  const type = document.getElementById("new-type").value;
+  const paid = paidHours(hours);
+  const estimated = paid * state.rate * 1.04 * 0.97;
+  const net = netInput ? parseFloat(netInput) : Math.round(estimated*100)/100;
+  if (!net) return;
+  pushUndo();
+  state.paystubs.push({ id: state.nextId++, date, hours, net, type, source });
+  addTxLog({ kind:"income", label: (TYPE_ICONS[type]||"💳")+" "+(source||date), amount: net, dir:"in", note: type });
+  document.getElementById("new-date").value = "";
+  document.getElementById("new-hours").value = "";
+  document.getElementById("new-net").value = "";
+  document.getElementById("new-source").value = "";
+  saveState();
+  updateAll();
+  renderStubs();
+  renderLog();
+  showToast("💳 Income added — " + fmt(net));
+}
+
+function removePaystub(id) {
+  state.paystubs = state.paystubs.filter(p => p.id !== id);
+  saveState();
+  updateAll();
+  renderStubs();
+}
+
+function renderStubs() {
+  const body = document.getElementById("stubs-body");
+  if (!state.paystubs.length) {
+    body.innerHTML = '<div class="table-empty">No income added yet.</div>';
+    document.getElementById("stubs-stats").innerHTML = "";
+    return;
+  }
+  body.innerHTML = state.paystubs.map(p => {
+    const paid = paidHours(p.hours);
+    const save = p.net * getSavingsPct(p.net);
+    const icon = TYPE_ICONS[p.type]||"💳";
+    return `<div class="table-row">
+      <span style="font-size:13px">${p.date}${p.source?' · <span style="color:var(--muted);font-size:11px">'+p.source+'</span>':''}</span>
+      <span style="font-size:13px;color:var(--muted)">${icon} ${p.type||'paycheque'}</span>
+      <span style="font-size:13px;color:var(--green);font-weight:600">${fmt(p.net)}</span>
+      <span style="font-size:13px;color:var(--gold)">${fmt(save)}</span>
+      <button class="btn-ghost" onclick="removePaystub(${p.id})">✕</button>
+    </div>`;
+  }).join("");
+
+  // Split paycheques vs other income
+  const pcEntries = state.paystubs.filter(p => p.type === "paycheque" || !p.type);
+  const otherEntries = state.paystubs.filter(p => p.type && p.type !== "paycheque");
+
+  const pcTotal = pcEntries.reduce((s,p)=>s+p.net,0);
+  const pcHours = pcEntries.reduce((s,p)=>s+paidHours(p.hours),0);
+  const pcAvgNet = pcEntries.length ? pcTotal / pcEntries.length : 0;
+  const pcAvgHrs = pcEntries.length ? pcHours / pcEntries.length : 0;
+  const pcEffHourly = pcHours > 0 ? pcTotal / pcHours : 0;
+
+  const otherTotal = otherEntries.reduce((s,p)=>s+p.net,0);
+  const totalEarned = pcTotal + otherTotal;
+  const totalSaved = state.paystubs.reduce((s,p)=>s+p.net*getSavingsPct(p.net),0);
+
+  document.getElementById("stubs-stats").innerHTML = `
+    <!-- TOTAL EARNED BANNER -->
+    <div class="total-banner">
+      <div>
+        <div style="font-size:10px;letter-spacing:3px;text-transform:uppercase;color:var(--blue);margin-bottom:4px">Total Earned Since You Started</div>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:48px;color:var(--blue);letter-spacing:2px;line-height:1">${fmt(totalEarned)}</div>
+        <div style="font-size:12px;color:var(--muted);margin-top:4px">across ${state.paystubs.length} entr${state.paystubs.length!==1?"ies":"y"}</div>
+      </div>
+      <div style="text-align:right">
+        <div style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:4px">Total Saved (est.)</div>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:28px;color:var(--gold);letter-spacing:1px">${fmt(totalSaved)}</div>
+      </div>
+    </div>
+    <!-- PAYCHEQUE STATS — only updates when paycheques added -->
+    <div class="card" style="margin-bottom:12px;border-color:rgba(0,230,118,0.2)">
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:2px;color:var(--green);margin-bottom:12px">💳 PAYCHEQUE STATS</div>
+      <div style="display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:12px;margin-bottom:14px">
+        <div>
+          <div style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:4px">Total from Paycheques</div>
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:36px;color:var(--green);letter-spacing:1px;line-height:1">${fmt(pcTotal)}</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:4px">${pcEntries.length} paycheque${pcEntries.length!==1?"s":""} · ${pcHours.toFixed(1)} paid hrs</div>
+        </div>
+        <div style="text-align:right">
+          <div style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:4px">Avg Hourly After Tax</div>
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:28px;color:var(--text);letter-spacing:1px">${pcEntries.length ? fmt(pcEffHourly)+"/hr" : "—"}</div>
+        </div>
+      </div>
+      <div class="grid3">
+        <div class="stat-card"><div class="label">Avg Hours / Pay</div><div style="font-family:'Bebas Neue',sans-serif;font-size:24px;color:var(--text);margin-top:4px">${pcEntries.length ? pcAvgHrs.toFixed(1)+"h" : "—"}</div></div>
+        <div class="stat-card"><div class="label">Avg Net Paycheque</div><div style="font-family:'Bebas Neue',sans-serif;font-size:24px;color:var(--green);margin-top:4px">${pcEntries.length ? fmt(pcAvgNet) : "—"}</div></div>
+        <div class="stat-card"><div class="label">Paycheques Added</div><div style="font-family:'Bebas Neue',sans-serif;font-size:24px;color:var(--text);margin-top:4px">${pcEntries.length}</div></div>
+      </div>
+    </div>
+    <!-- OTHER INCOME COUNTER -->
+    <div class="card" style="margin-bottom:12px;border-color:rgba(255,183,77,0.2)">
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:2px;color:var(--orange);margin-bottom:12px">💵 OTHER INCOME</div>
+      ${otherEntries.length === 0 ? `<div style="font-size:13px;color:var(--muted)">No cash, tips, or other income added yet.</div>` : `
+      <div style="display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:12px;margin-bottom:14px">
+        <div>
+          <div style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:4px">Total Other Income</div>
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:36px;color:var(--orange);letter-spacing:1px;line-height:1">${fmt(otherTotal)}</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:4px">${otherEntries.length} entr${otherEntries.length!==1?"ies":"y"}</div>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:6px">
+        ${otherEntries.map(p=>{
+          const icon = TYPE_ICONS[p.type]||"📦";
+          const src = p.source ? ' · <span style="color:var(--muted);font-size:11px">'+p.source+'</span>' : '';
+          return '<div style="display:flex;align-items:center;gap:10px;padding:8px 12px;background:var(--card2);border-radius:10px">'
+            +'<span style="font-size:16px">'+icon+'</span>'
+            +'<span style="font-size:13px;flex:1">'+p.date+src+'</span>'
+            +'<span style="font-family:Bebas Neue,sans-serif;font-size:18px;color:var(--orange)">'+fmt(p.net)+'</span>'
+            +'</div>';
+        }).join("")}
+      </div>`}
+    </div>`;
+}
+
+// ── PLAN ──────────────────────────────────────────────────────────────
+function renderPlan() {
+  const proj = getProjection();
+  const goal = state.goal;
+
+  // Update net worth banner
+  const portVal     = getPortfolioValue();
+  const portInvested = getPortfolioInvested();
+  const portGain    = portVal - portInvested;
+  const netWorth    = state.savings + portVal;
+  const nwEl = document.getElementById("plan-networth");
+  const nwSub = document.getElementById("plan-networth-sub");
+  const cashEl = document.getElementById("plan-cash");
+  const pvEl = document.getElementById("plan-portval");
+  const pgEl = document.getElementById("plan-portgain");
+  if (nwEl) nwEl.textContent = fmtInt(netWorth);
+  if (nwSub) nwSub.textContent = "Cash " + fmtInt(state.savings) + " + Portfolio " + fmtInt(portVal);
+  if (cashEl) cashEl.textContent = fmtInt(state.savings);
+  if (pvEl) pvEl.textContent = fmtInt(portVal);
+  if (pgEl) {
+    pgEl.textContent = (portGain >= 0 ? "+" : "") + fmt(portGain);
+    pgEl.style.color = portGain > 0 ? "var(--green)" : portGain < 0 ? "var(--red)" : "var(--muted)";
+  }
+
+  // Milestones use net worth so investment growth counts toward goals
+  const progressBase = netWorth;
+
+  const milestones = [
+    {label:"🎯 Invest First $500", target:500, color:"var(--green)"},
+    {label:"🚀 Add ZSP at $1,000", target:1000, color:"var(--gold)"},
+    {label:"💼 Portfolio at $2,500", target:2500, color:"var(--blue)"},
+    {label:"🏆 Goal: "+fmtInt(goal), target:goal, color:"#ff7043"},
+  ];
+  document.getElementById("milestones-grid").innerHTML = milestones.map(m => {
+    const pct = Math.min(100, (progressBase/m.target)*100);
+    const mIdx = proj.findIndex(x => x.total >= m.target);
+    const note = pct>=100 ? "✅ Reached!" : mIdx>=0 ? `~${mIdx} month${mIdx!==1?"s":""} away` : "Keep saving!";
+    return `<div class="milestone-card">
+      <div style="font-size:12px;color:var(--muted);margin-bottom:8px">${m.label}</div>
+      <div style="display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:6px">
+        <span style="font-family:'Bebas Neue',sans-serif;font-size:22px;color:${m.color}">${fmtInt(progressBase)}</span>
+        <span style="font-size:11px;color:var(--muted)">/ ${fmtInt(m.target)}</span>
+      </div>
+      <div class="prog"><div class="prog-fill" style="width:${pct}%;background:${m.color}"></div></div>
+      <div style="font-size:11px;color:var(--muted);margin-top:6px">${note}</div>
+    </div>`;
+  }).join("");
+
+  const maxVal = Math.max(...proj.slice(0,12).map(m=>m.total), 1);
+  document.getElementById("chart-bars").innerHTML = proj.map((m,i) => {
+    const h = Math.max(4, (m.total/maxVal)*110);
+    const isGoal = m.total>=goal && (i===0?state.savings:proj[i-1].total)<goal;
+    const bg = isGoal ? "var(--gold)" : i<12 ? "var(--green)" : "#1e4d3a";
+    return `<div style="display:flex;flex-direction:column;align-items:center;min-width:28px;flex:0 0 28px" title="${m.month} ${m.year}: ${fmtInt(m.total)}">
+      <div class="bar" style="width:100%;height:${h}px;background:${bg}"></div>
+      ${i%3===0?`<div class="bar-label">${m.month}</div>`:""}
+    </div>`;
+  }).join("");
+
+  const milestoneMap = {500:"🎯 INVEST NOW",1000:"🚀 ADD ZSP",2500:"💼 MILESTONE"};
+  milestoneMap[goal] = "🏆 GOAL HIT";
+  document.getElementById("month-table").innerHTML = proj.map((m,i) => {
+    const prev = i===0 ? state.savings : proj[i-1].total;
+    const hit = [500,1000,2500,goal].find(t => m.total>=t && prev<t);
+    const bg = hit ? "rgba(255,213,79,0.06)" : "var(--card2)";
+    const border = hit ? "rgba(255,213,79,0.25)" : "var(--border)";
+    const valColor = hit ? "var(--gold)" : "var(--green)";
+    const badge = hit ? `<span class="m-badge">${milestoneMap[hit]||"💼 MILESTONE"}</span>` : "";
+    return `<div class="month-row" style="background:${bg};border:1px solid ${border}">
+      <div class="month-name">${m.month} <span style="font-size:11px;color:var(--dim)">${m.year}</span></div>
+      <div style="flex:1;font-size:12px;color:var(--muted)">Save ~${fmt(m.saved)}${badge}</div>
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:${valColor}">${fmtInt(m.total)}</div>
+    </div>`;
+  }).join("");
+}
+
+// ── ALERTS ─────────────────────────────────────────────────────────────
+function renderAlerts() {
+  const bal = state.savings;
+  const threshold = state.alertThreshold || 100;
+  const alerts = [];
+  if (bal < 0) alerts.push({ cls:"alert-danger", msg:"⚠️ Your balance is negative! Review your expenses." });
+  else if (bal < threshold) alerts.push({ cls:"alert-warn", msg:`⚠️ Balance is below your ${fmt(threshold)} alert threshold. Watch your spending!` });
+  else alerts.push({ cls:"alert-ok", msg:`✓ Balance is healthy — ${fmt(bal)} in the bank.` });
+
+  const pcAlert = state.paystubs.filter(p => p.type === "paycheque" || !p.type);
+  const avgNet = pcAlert.length ? pcAlert.reduce((s,p)=>s+p.net,0)/pcAlert.length : 0;
+  const allMonthly = (state.expenses||[]).reduce((s,e)=>s+toMonthly(e.amount,e.freq),0);
+  if (avgNet > 0 && allMonthly > avgNet * 2) {
+    alerts.push({ cls:"alert-danger", msg:"📛 Monthly expenses exceed your average monthly income. You may be overspending." });
+  }
+
+  document.getElementById("alerts-area").innerHTML = alerts.map(a =>
+    `<div class="alert ${a.cls}">${a.msg}</div>`
+  ).join("");
+}
+
+// ── EXPORT CSV ─────────────────────────────────────────────────────────
+function exportCSV() {
+  const rows = [["Date/Source","Type","Amount","Note"]];
+  state.txLog.slice().reverse().forEach(t => {
+    rows.push([t.ts, t.kind, (t.dir==="in"?"+":"-")+t.amount.toFixed(2), t.label]);
+  });
+  const csv = rows.map(r => r.map(c => `"${String(c).replace(/"/g,'""')}"`).join(",")).join("\n");
+  const blob = new Blob([csv], {type:"text/csv"});
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = `wealth-builder-${new Date().toISOString().slice(0,10)}.csv`;
+  a.click();
+}
+
+// ── MASTER UPDATE ─────────────────────────────────────────────────────
+function updateAll() {
+  const oldBal = state.savings;
+  state.name = document.getElementById("inp-name").value || "Christopher";
+  state.rate = parseFloat(document.getElementById("inp-rate").value) || 16.5;
+  state.baseSavings = parseFloat(document.getElementById("inp-savings").value) || 0;
+  state.goal = parseFloat(document.getElementById("inp-goal").value) || 5000;
+  state.customPct = parseInt(document.getElementById("inp-custpct").value) || 20;
+  state.alertThreshold = parseFloat(document.getElementById("inp-alert").value) || 100;
+  state.savings = computeBalance();
+
+  document.getElementById("header-sub").textContent = state.name + "'s Personal Finance Tracker";
+  const bal = state.savings;
+  const balEl = document.getElementById("header-bal");
+  balEl.textContent = fmtInt(bal);
+  balEl.style.color = bal < 0 ? "var(--red)" : bal < state.alertThreshold ? "var(--gold)" : "var(--green)";
+
+  const pcOnly = state.paystubs.filter(p => p.type === "paycheque" || !p.type);
+  const avgNet = pcOnly.length ? pcOnly.reduce((s,p)=>s+p.net,0)/pcOnly.length : 0;
+  const monthly = avgNet * 2 * getSavingsPct(avgNet);
+  document.getElementById("setup-monthly").textContent = fmt(monthly);
+  document.getElementById("setup-monthly-sub").textContent = `Based on 2 paycheques × avg ${fmt(avgNet)} net (paycheques only)`;
+  const proj = getProjection();
+  const mIdx = proj.findIndex(m => m.total >= state.goal);
+  const alreadyThere = state.savings >= state.goal;
+  let goalText, goalSub;
+  if (alreadyThere) { goalText = "✓ Done!"; goalSub = "You've already reached your goal!"; }
+  else if (mIdx < 0) { goalText = "24mo+"; goalSub = "May take over 24 months — try saving more"; }
+  else if (mIdx === 0) { goalText = "< 1mo"; goalSub = "to reach " + fmtInt(state.goal); }
+  else { goalText = mIdx + " mo"; goalSub = "to reach " + fmtInt(state.goal); }
+  document.getElementById("setup-months-goal").textContent = goalText;
+  document.getElementById("setup-goal-sub").textContent = goalSub;
+
+  // Update portfolio header stats
+  const portVal = getPortfolioValue();
+  const netWorth = state.savings + portVal;
+  const portEl = document.getElementById("header-portfolio");
+  const nwEl   = document.getElementById("header-networth");
+  if (portEl) portEl.textContent = fmtInt(portVal);
+  if (nwEl)   { nwEl.textContent = fmtInt(netWorth); nwEl.style.color = netWorth >= 0 ? "var(--gold)" : "var(--red)"; }
+
+  renderAlerts();
+  if (activeTab === "plan") { renderPlan(); updateWhatIf(); setTimeout(renderGrowthChart,50); }
+  if (activeTab === "paystubs") { renderStubs(); renderSaveChecks(); renderDeductions(); }
+  if (activeTab === "expenses") { renderExpenses(); renderCalendar(); }
+  if (activeTab === "log") renderLog();
+  if (activeTab === "invest") renderHoldings();
+  // Gauge always updates
+  const pcGaugeArr2 = state.paystubs.filter(p => p.type === "paycheque" || !p.type);
+  const avgNetRate = pcGaugeArr2.length ? pcGaugeArr2.reduce((s,p)=>s+p.net,0)/pcGaugeArr2.length : 0;
+  renderGauge(getSavingsPct(avgNetRate)*100);
+  // Check milestone celebration
+  if (typeof oldBal !== "undefined") checkMilestoneCelebration(state.savings, oldBal);
+  saveState();
+}
+
+// ── DAILY QUOTE ───────────────────────────────────────────────────────
+const QUOTES = [
+  { text: "Do not save what is left after spending, but spend what is left after saving.", author: "Warren Buffett" },
+  { text: "The habit of saving is itself an education; it fosters every virtue, teaches self-denial, cultivates the sense of order.", author: "T.T. Munger" },
+  { text: "It's not your salary that makes you rich, it's your spending habits.", author: "Charles A. Jaffe" },
+  { text: "Wealth consists not in having great possessions, but in having few wants.", author: "Epictetus" },
+  { text: "A penny saved is a penny earned.", author: "Benjamin Franklin" },
+  { text: "The stock market is a device for transferring money from the impatient to the patient.", author: "Warren Buffett" },
+  { text: "Financial freedom is available to those who learn about it and work for it.", author: "Robert Kiyosaki" },
+  { text: "Don't tell me what you value, show me your budget, and I'll tell you what you value.", author: "Joe Biden" },
+  { text: "Small amounts saved daily add up to huge amounts over time.", author: "Margo Vader" },
+  { text: "Compound interest is the eighth wonder of the world. He who understands it, earns it.", author: "Albert Einstein" },
+  { text: "The goal isn't more money. The goal is living life on your terms.", author: "Chris Brogan" },
+  { text: "An investment in knowledge pays the best interest.", author: "Benjamin Franklin" },
+  { text: "You must gain control over your money or the lack of it will forever control you.", author: "Dave Ramsey" },
+  { text: "Never spend your money before you have it.", author: "Thomas Jefferson" },
+];
+function renderQuote() {
+  const idx = new Date().getDate() % QUOTES.length;
+  const q = QUOTES[idx];
+  document.getElementById("daily-quote").innerHTML = `
+    <div class="quote-mark">"</div>
+    <div>
+      <div class="quote-text">${q.text}</div>
+      <div class="quote-author">— ${q.author}</div>
+    </div>`;
+}
+
+// ── CONFETTI ──────────────────────────────────────────────────────────
+let confettiRunning = false;
+function launchConfetti() {
+  const canvas = document.getElementById("confetti-canvas");
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+  canvas.style.display = "block";
+  const ctx = canvas.getContext("2d");
+  const pieces = Array.from({length:120}, () => ({
+    x: Math.random()*canvas.width, y: -20,
+    vx: (Math.random()-0.5)*6, vy: Math.random()*4+2,
+    r: Math.random()*7+3,
+    color: ["#00e676","#ffd54f","#64b5f6","#ff7043","#ce93d8","#ffffff"][Math.floor(Math.random()*6)],
+    rot: Math.random()*360, rotV: (Math.random()-0.5)*8,
+    shape: Math.random()>0.5?"rect":"circle"
+  }));
+  let frame=0;
+  function draw() {
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    pieces.forEach(p => {
+      ctx.save(); ctx.translate(p.x,p.y); ctx.rotate(p.rot*Math.PI/180);
+      ctx.fillStyle = p.color; ctx.globalAlpha = Math.max(0, 1 - frame/90);
+      if(p.shape==="rect"){ ctx.fillRect(-p.r,-p.r/2,p.r*2,p.r); }
+      else { ctx.beginPath(); ctx.arc(0,0,p.r,0,Math.PI*2); ctx.fill(); }
+      ctx.restore();
+      p.x+=p.vx; p.y+=p.vy; p.vy+=0.08; p.rot+=p.rotV;
+    });
+    frame++;
+    if(frame < 100) requestAnimationFrame(draw);
+    else { canvas.style.display="none"; confettiRunning=false; }
+  }
+  if(!confettiRunning){ confettiRunning=true; draw(); }
+}
+
+// Track which milestones we've celebrated so we don't re-fire
+let celebratedMilestones = new Set(JSON.parse(localStorage.getItem("wb_celebrated")||"[]"));
+function checkMilestoneCelebration(newBal, oldBal) {
+  const milestones = [500, 1000, 2500, state.goal];
+  milestones.forEach(m => {
+    if (newBal >= m && oldBal < m && !celebratedMilestones.has(m)) {
+      celebratedMilestones.add(m);
+      localStorage.setItem("wb_celebrated", JSON.stringify([...celebratedMilestones]));
+      launchConfetti();
+      setTimeout(() => showToast(`🎉 Milestone hit: ${fmtInt(m)}!`, false), 400);
+    }
+  });
+}
+
+// ── UNDO TOAST ────────────────────────────────────────────────────────
+let undoStack = [];
+let undoTimer = null;
+
+function showToast(msg, showUndo=true) {
+  document.getElementById("undo-msg").textContent = msg;
+  document.getElementById("undo-btn").style.display = showUndo ? "" : "none";
+  const toast = document.getElementById("undo-toast");
+  toast.classList.add("show");
+  clearTimeout(undoTimer);
+  undoTimer = setTimeout(() => toast.classList.remove("show"), 4000);
+}
+
+function undoLast() {
+  if (!undoStack.length) return;
+  const snap = undoStack.pop();
+  state.paystubs = snap.paystubs;
+  state.expenses = snap.expenses;
+  state.txLog = snap.txLog;
+  state.nextId = snap.nextId;
+  state.nextExpId = snap.nextExpId;
+  state.nextTxId = snap.nextTxId;
+  state.baseSavings = snap.baseSavings;
+  saveState();
+  updateAll();
+  renderStubs();
+  renderLog();
+  document.getElementById("undo-toast").classList.remove("show");
+}
+
+function pushUndo() {
+  undoStack.push({
+    paystubs: JSON.parse(JSON.stringify(state.paystubs)),
+    expenses: JSON.parse(JSON.stringify(state.expenses)),
+    txLog: JSON.parse(JSON.stringify(state.txLog)),
+    nextId: state.nextId, nextExpId: state.nextExpId, nextTxId: state.nextTxId,
+    baseSavings: state.baseSavings
+  });
+  if (undoStack.length > 10) undoStack.shift();
+}
+
+// ── NEXT PAYDAY COUNTDOWN ─────────────────────────────────────────────
+function updatePayday() {
+  const val = document.getElementById("inp-lastpay").value;
+  state.lastPayDate = val;
+  const daysEl = document.getElementById("payday-days");
+  const labelEl = document.getElementById("payday-label");
+  const dateLabel = document.getElementById("payday-date-label");
+  if (!daysEl) return;
+  if (!val) { daysEl.textContent = "—"; if(labelEl) labelEl.textContent = "days"; if(dateLabel) dateLabel.textContent = "Set your last pay date above"; return; }
+  const last = new Date(val + "T00:00:00");
+  const next = new Date(last);
+  next.setDate(next.getDate() + 14); // bi-weekly
+  const today = new Date(); today.setHours(0,0,0,0);
+  let diff = Math.round((next - today) / (1000*60*60*24));
+  // If next is in the past, keep adding 14 days
+  while (diff < 0) { next.setDate(next.getDate() + 14); diff = Math.round((next - today) / (1000*60*60*24)); }
+  if (diff === 0) { daysEl.textContent = "TODAY"; if(labelEl) labelEl.textContent = ""; }
+  else { daysEl.textContent = diff; if(labelEl) labelEl.textContent = diff === 1 ? "day" : "days"; }
+  const opts = {weekday:"short",month:"short",day:"numeric"};
+  if(dateLabel) dateLabel.textContent = "Next payday: " + next.toLocaleDateString("en-CA", opts);
+}
+
+// ── DID I SAVE? TRACKER ───────────────────────────────────────────────
+function toggleSaveCheck(stubId) {
+  const key = String(stubId);
+  if (state.saveChecks[key] === "yes") state.saveChecks[key] = "no";
+  else if (state.saveChecks[key] === "no") delete state.saveChecks[key];
+  else state.saveChecks[key] = "yes";
+  saveState();
+  renderSaveChecks();
+}
+
+function renderSaveChecks() {
+  const el = document.getElementById("save-check-list");
+  const sumEl = document.getElementById("save-check-summary");
+  if (!el) return;
+  const pcStubs = state.paystubs.filter(p => p.type === "paycheque" || !p.type);
+  if (!pcStubs.length) {
+    el.innerHTML = '<div style="font-size:13px;color:var(--muted)">Add paycheques above to track whether you saved.</div>';
+    if(sumEl) sumEl.innerHTML = "";
+    return;
+  }
+  // Show most recent 8
+  const recent = [...pcStubs].reverse().slice(0,8);
+  el.innerHTML = recent.map(p => {
+    const key = String(p.id);
+    const status = state.saveChecks[key];
+    const target = fmt(p.net * getSavingsPct(p.net));
+    const yesStyle = status==="yes" ? "background:var(--green);color:var(--black);border-color:var(--green)" : "background:transparent;color:var(--muted);border-color:var(--border)";
+    const noStyle  = status==="no"  ? "background:var(--red);color:#fff;border-color:var(--red)"     : "background:transparent;color:var(--muted);border-color:var(--border)";
+    return `<div style="display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--card2);border-radius:10px;margin-bottom:8px">
+      <div style="flex:1">
+        <div style="font-size:13px;font-weight:500">${p.date} — ${fmt(p.net)}</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:2px">Target to save: ${target}</div>
+      </div>
+      <div class="save-check">
+        <button class="save-btn" style="${yesStyle};border:1px solid" onclick="toggleSaveCheck(${p.id})">✓ YES</button>
+        <button class="save-btn" style="${noStyle};border:1px solid" onclick="toggleSaveCheck(${p.id})">✗ NO</button>
+      </div>
+    </div>`;
+  }).join("");
+  // Summary
+  const total = pcStubs.length;
+  const answered = Object.keys(state.saveChecks).filter(k => pcStubs.find(p=>String(p.id)===k));
+  const yesCount = answered.filter(k => state.saveChecks[k]==="yes").length;
+  const noCount  = answered.filter(k => state.saveChecks[k]==="no").length;
+  const rate = answered.length ? Math.round((yesCount/answered.length)*100) : null;
+  if(sumEl && answered.length > 0) {
+    const color = rate >= 80 ? "var(--green)" : rate >= 50 ? "var(--gold)" : "var(--red)";
+    const msg = rate >= 80 ? "Great discipline! Keep it up." : rate >= 50 ? "Room to improve — try automating your transfer." : "You're missing most saves. Move the money the moment you're paid.";
+    sumEl.innerHTML = `<div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:var(--card2);border-radius:10px;flex-wrap:wrap;gap:10px">
+      <div>
+        <div style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:2px">Savings Discipline</div>
+        <div style="font-size:13px;color:var(--muted)">${yesCount} saved · ${noCount} skipped · ${total-answered.length} unanswered</div>
+        <div style="font-size:12px;color:${color};margin-top:4px">${msg}</div>
+      </div>
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:42px;color:${color};letter-spacing:2px">${rate}%</div>
+    </div>`;
+  } else if(sumEl) { sumEl.innerHTML = ""; }
+}
+
+// ── TAX DEDUCTION TRACKER ─────────────────────────────────────────────
+function addDeduction() {
+  const date = document.getElementById("ded-date").value.trim();
+  const tax  = parseFloat(document.getElementById("ded-tax").value)  || 0;
+  const ei   = parseFloat(document.getElementById("ded-ei").value)   || 0;
+  const cpp  = parseFloat(document.getElementById("ded-cpp").value)  || 0;
+  if (!date || (!tax && !ei && !cpp)) return;
+  state.deductions.push({ id: state.nextDedId++, date, tax, ei, cpp });
+  document.getElementById("ded-date").value = "";
+  document.getElementById("ded-tax").value  = "";
+  document.getElementById("ded-ei").value   = "";
+  document.getElementById("ded-cpp").value  = "";
+  saveState();
+  renderDeductions();
+}
+
+function removeDeduction(id) {
+  state.deductions = state.deductions.filter(d => d.id !== id);
+  saveState();
+  renderDeductions();
+}
+
+function renderDeductions() {
+  const el  = document.getElementById("ded-list");
+  const sum = document.getElementById("ded-summary");
+  if (!el) return;
+  if (!state.deductions.length) {
+    el.innerHTML = '<div style="font-size:13px;color:var(--muted)">No deductions logged yet. Find these on your pay stub.</div>';
+    if(sum) sum.innerHTML = "";
+    return;
+  }
+  el.innerHTML = state.deductions.map(d => {
+    const total = d.tax + d.ei + d.cpp;
+    return `<div class="ded-row">
+      <div style="flex:1">
+        <div style="font-size:13px;font-weight:500">${d.date}</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:2px">
+          ${d.tax>0?'Tax: '+fmt(d.tax)+' · ':''}EI: ${fmt(d.ei)} · CPP: ${fmt(d.cpp)}
+        </div>
+      </div>
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:var(--red)">-${fmt(total)}</div>
+      <button class="btn-ghost" onclick="removeDeduction(${d.id})">✕</button>
+    </div>`;
+  }).join("");
+  const ytdTax = state.deductions.reduce((s,d)=>s+d.tax,0);
+  const ytdEI  = state.deductions.reduce((s,d)=>s+d.ei, 0);
+  const ytdCPP = state.deductions.reduce((s,d)=>s+d.cpp,0);
+  const ytdTotal = ytdTax + ytdEI + ytdCPP;
+  if(sum) sum.innerHTML = `<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:4px">
+    <div class="stat-card"><div class="label">YTD Income Tax</div><div style="font-family:'Bebas Neue',sans-serif;font-size:22px;color:var(--red);margin-top:4px">${fmt(ytdTax)}</div></div>
+    <div class="stat-card"><div class="label">YTD EI</div><div style="font-family:'Bebas Neue',sans-serif;font-size:22px;color:var(--red);margin-top:4px">${fmt(ytdEI)}</div></div>
+    <div class="stat-card"><div class="label">YTD CPP</div><div style="font-family:'Bebas Neue',sans-serif;font-size:22px;color:var(--red);margin-top:4px">${fmt(ytdCPP)}</div></div>
+    <div class="stat-card" style="border-color:rgba(255,82,82,0.3)"><div class="label">Total Deducted</div><div style="font-family:'Bebas Neue',sans-serif;font-size:22px;color:var(--red);margin-top:4px">${fmt(ytdTotal)}</div></div>
+  </div>`;
+}
+
+// ── INVESTMENT TRACKER ───────────────────────────────────────────────
+const KNOWN_PRICES = {
+  "XGRO.TO":28.50,"XGRO":28.50,
+  "ZSP.TO":89.20,"ZSP":89.20,
+  "XBB.TO":27.40,"XBB":27.40,
+  "VEQT.TO":42.10,"VEQT":42.10,
+  "XEQT.TO":35.80,"XEQT":35.80,
+  "AAPL":189.50,"MSFT":415.20,"NVDA":875.00,
+  "AMZN":182.00,"GOOGL":175.00,"META":490.00,
+  "TSLA":245.00,"BRK.B":380.00,
+  "RY.TO":138.50,"TD.TO":82.30,"SHOP.TO":95.40,
+};
+
+async function fetchPrice(ticker) {
+  // Try Yahoo Finance via allorigins proxy (CORS-free)
+  const sym = ticker.includes(".") ? ticker : ticker;
+  const url = `https://api.allorigins.win/get?url=${encodeURIComponent("https://query1.finance.yahoo.com/v8/finance/chart/"+sym+"?interval=1d&range=1d")}`;
+  try {
+    const res = await fetch(url, { signal: AbortSignal.timeout(6000) });
+    const json = await res.json();
+    const data = JSON.parse(json.contents);
+    const price = data?.chart?.result?.[0]?.meta?.regularMarketPrice;
+    if (price && price > 0) return parseFloat(price.toFixed(4));
+  } catch(e) {}
+  // Fallback to known prices
+  return KNOWN_PRICES[ticker.toUpperCase()] || null;
+}
+
+function addHolding() {
+  const ticker = document.getElementById("inv-ticker-inp").value.trim().toUpperCase();
+  const shares = parseFloat(document.getElementById("inv-shares").value);
+  const buyPrice = parseFloat(document.getElementById("inv-buy-price").value);
+  const currentPrice = parseFloat(document.getElementById("inv-current-price").value) || null;
+  const notes = document.getElementById("inv-notes").value.trim();
+  const shouldDeduct = document.getElementById("inv-deduct").checked;
+  if (!ticker || !shares || !buyPrice) return;
+
+  const totalCost = shares * buyPrice;
+  const h = { id: state.nextHoldingId++, ticker, shares, buyPrice, currentPrice, notes, lastUpdated: null };
+  state.holdings.push(h);
+
+  // Log as investment purchase (deducts from cash balance)
+  if (shouldDeduct) {
+    state.txLog.push({
+      id: state.nextTxId++,
+      ts: nowStr(),
+      kind: "investment",
+      dir: "out",
+      amount: totalCost,
+      label: "Invested in " + ticker + " (" + shares + " shares @ " + fmt(buyPrice) + ")"
+    });
+  }
+
+  document.getElementById("inv-ticker-inp").value = "";
+  document.getElementById("inv-shares").value = "";
+  document.getElementById("inv-buy-price").value = "";
+  document.getElementById("inv-current-price").value = "";
+  document.getElementById("inv-notes").value = "";
+  saveState();
+  updateAll();
+  renderHoldings();
+  if (!currentPrice) fetchAndUpdatePrice(h.id);
+}
+
+function removeHolding(id) {
+  const h = state.holdings.find(h => h.id === id);
+  if (!h) return;
+  const saleValue = h.shares * (h.currentPrice || h.buyPrice);
+  const costBasis = h.shares * h.buyPrice;
+  const gainLoss = saleValue - costBasis;
+
+  const action = confirm(
+    "Did you SELL this holding?\n\n" +
+    "OK = Yes, sold — add " + fmt(saleValue) + " back to cash balance" +
+    (gainLoss !== 0 ? " (" + (gainLoss >= 0 ? "+" : "") + fmt(gainLoss) + " gain/loss)" : "") +
+    "\nCancel = No, just remove from tracker (no balance change)"
+  );
+
+  if (action) {
+    // Step 1: remove the original purchase deduction from txLog
+    const origIdx = state.txLog.findIndex(t => t.kind === "investment" && t.label.includes(h.ticker));
+    if (origIdx >= 0) state.txLog.splice(origIdx, 1);
+
+    // Step 2: add sale proceeds directly to baseSavings
+    // This is the cleanest approach — no fake paystub, no double counting
+    state.baseSavings += saleValue;
+
+    // Step 3: log it in txLog for the activity log (read-only record, not counted in computeBalance)
+    state.txLog.push({
+      id: state.nextTxId++,
+      ts: nowStr(),
+      kind: "investment_sale",
+      dir: "in",
+      amount: saleValue,
+      label: "Sold " + h.ticker + " — " + h.shares + " shares @ " + fmt(h.currentPrice || h.buyPrice) +
+             (gainLoss !== 0 ? " | " + (gainLoss >= 0 ? "+" : "") + fmt(gainLoss) + " gain" : "")
+    });
+  }
+
+  state.holdings = state.holdings.filter(h2 => h2.id !== id);
+  saveState();
+  updateAll();
+  renderHoldings();
+}
+
+async function fetchAndUpdatePrice(id) {
+  const h = state.holdings.find(h => h.id === id);
+  if (!h) return;
+  const el = document.getElementById("price-" + id);
+  if (el) { el.innerHTML = '<span class="price-loading">fetching…</span>'; }
+  const price = await fetchPrice(h.ticker);
+  if (price) {
+    h.currentPrice = price;
+    h.lastUpdated = new Date().toLocaleTimeString("en-CA", {hour:"2-digit",minute:"2-digit"});
+    saveState();
+    renderHoldings();
+    // Update header portfolio value
+    const portEl = document.getElementById("header-portfolio");
+    const nwEl   = document.getElementById("header-networth");
+    if (portEl) portEl.textContent = fmtInt(getPortfolioValue());
+    if (nwEl)   nwEl.textContent = fmtInt(getNetWorth());
+  } else {
+    if (el) el.innerHTML = '<span class="price-loading">enter manually</span>';
+  }
+}
+
+async function refreshAllPrices() {
+  const btn = document.querySelector(".refresh-btn");
+  if (btn) { btn.textContent = "⏳ REFRESHING…"; btn.disabled = true; }
+  for (const h of state.holdings) {
+    const price = await fetchPrice(h.ticker);
+    if (price) {
+      h.currentPrice = price;
+      h.lastUpdated = new Date().toLocaleTimeString("en-CA", {hour:"2-digit",minute:"2-digit"});
+    }
+  }
+  saveState();
+  renderHoldings();
+  if (btn) { btn.textContent = "🔄 REFRESH PRICES"; btn.disabled = false; }
+}
+
+function updateHoldingPrice(id, val) {
+  const h = state.holdings.find(h => h.id === id);
+  if (h) { h.currentPrice = parseFloat(val) || null; saveState(); renderHoldings(); }
+}
+
+function renderHoldings() {
+  const wrap = document.getElementById("holdings-wrap");
+  const body = document.getElementById("holdings-body");
+  if (!wrap || !body) return;
+
+  if (!state.holdings.length) {
+    wrap.style.display = "none";
+    // Update summary to zeros
+    document.getElementById("port-total-invested").textContent = "$0.00";
+    document.getElementById("port-current-val").textContent = "$0.00";
+    const gl = document.getElementById("port-gain-loss");
+    gl.textContent = "$0.00"; gl.style.color = "var(--muted)";
+    return;
+  }
+  wrap.style.display = "";
+
+  // Calculate totals (only for holdings with current price)
+  const totalInvested = state.holdings.reduce((s,h) => s + h.shares * h.buyPrice, 0);
+  const totalCurrent  = state.holdings.reduce((s,h) => s + h.shares * (h.currentPrice || h.buyPrice), 0);
+  const totalGain     = totalCurrent - totalInvested;
+  const totalGainPct  = totalInvested > 0 ? (totalGain / totalInvested) * 100 : 0;
+
+  document.getElementById("port-total-invested").textContent = fmt(totalInvested);
+  document.getElementById("port-current-val").textContent = fmt(totalCurrent);
+  const glEl = document.getElementById("port-gain-loss");
+  glEl.textContent = (totalGain >= 0 ? "+" : "") + fmt(totalGain) + " (" + (totalGain >= 0 ? "+" : "") + totalGainPct.toFixed(2) + "%)";
+  glEl.style.color = totalGain >= 0 ? "var(--green)" : "var(--red)";
+
+  // Rows
+  body.innerHTML = state.holdings.map(h => {
+    const invested = h.shares * h.buyPrice;
+    const current  = h.shares * (h.currentPrice || h.buyPrice);
+    const gain     = current - invested;
+    const gainPct  = invested > 0 ? (gain / invested) * 100 : 0;
+    const gainStr  = (gain >= 0 ? "+" : "") + fmt(gain);
+    const gainPctStr = (gainPct >= 0 ? "+" : "") + gainPct.toFixed(2) + "%";
+    const gainColor = gain > 0 ? "var(--green)" : gain < 0 ? "var(--red)" : "var(--muted)";
+    const priceDisplay = h.currentPrice
+      ? `<div id="price-${h.id}" style="font-size:13px;font-weight:600">${fmt(h.currentPrice)}</div>${h.lastUpdated ? '<div style="font-size:10px;color:var(--muted)">' + h.lastUpdated + '</div>' : ''}`
+      : `<div id="price-${h.id}"><input class="inp" type="number" placeholder="Enter price" style="padding:6px 10px;font-size:12px;width:100px" onchange="updateHoldingPrice(${h.id},this.value)"></div>`;
+    return `<div class="stock-row">
+      <div>
+        <div class="stock-ticker" style="color:var(--text)">${h.ticker}</div>
+        <div style="font-size:11px;color:var(--muted)">${h.notes || (h.shares + " shares @ " + fmt(h.buyPrice))}</div>
+        <div style="font-size:11px;color:var(--muted)">${h.shares} shares · cost ${fmt(invested)}</div>
+      </div>
+      <div style="font-size:13px;color:var(--muted)">${h.shares}</div>
+      <div style="font-size:13px">${fmt(h.buyPrice)}</div>
+      <div>${priceDisplay}</div>
+      <div>
+        <div style="font-size:13px;font-weight:600;color:${gainColor}">${gainStr}</div>
+        <div style="font-size:11px;color:${gainColor}">${gainPctStr}</div>
+        <div style="font-size:11px;color:var(--muted)">${fmt(current)}</div>
+      </div>
+      <button class="btn-ghost" onclick="removeHolding(${h.id})">✕</button>
+    </div>`;
+  }).join("");
+
+  // Allocation bars
+  const allocBars = document.getElementById("port-alloc-bars");
+  const allocStrip = document.getElementById("port-alloc-bar-strip");
+  if (allocBars && totalCurrent > 0) {
+    const COLORS = ["#00e676","#ffd54f","#64b5f6","#ff7043","#ce93d8","#ffb74d","#81c784","#f48fb1","#90caf9","#80cbc4"];
+    allocBars.innerHTML = state.holdings.map((h,i) => {
+      const val = h.shares * (h.currentPrice || h.buyPrice);
+      const pct = (val / totalCurrent * 100).toFixed(1);
+      const col = COLORS[i % COLORS.length];
+      return `<div class="port-bar-wrap">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+          <span style="font-size:13px;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;color:${col}">${h.ticker}</span>
+          <span style="font-size:13px;color:var(--text)">${fmt(val)} <span style="color:var(--muted);font-size:11px">(${pct}%)</span></span>
+        </div>
+        <div class="port-bar"><div style="width:${pct}%;background:${col};height:100%;border-radius:99px"></div></div>
+      </div>`;
+    }).join("");
+    if (allocStrip) {
+      allocStrip.innerHTML = state.holdings.map((h,i) => {
+        const val = h.shares * (h.currentPrice || h.buyPrice);
+        const pct = (val / totalCurrent * 100).toFixed(1);
+        return `<div style="width:${pct}%;background:${COLORS[i%COLORS.length]};height:100%"></div>`;
+      }).join("");
+    }
+  }
+}
+
+// ── WHAT-IF SIMULATOR ─────────────────────────────────────────────────
+function updateWhatIf() {
+  const extraHrs = parseInt(document.getElementById("wi-hrs").value)||0;
+  const extraPct = parseInt(document.getElementById("wi-pct").value)||0;
+  document.getElementById("wi-hrs-val").textContent = "+"+extraHrs+"h";
+  document.getElementById("wi-pct-val").textContent = "+"+extraPct+"%";
+
+  const pcOnly2 = state.paystubs.filter(p => p.type === "paycheque" || !p.type);
+  const avgNet = pcOnly2.length ? pcOnly2.reduce((s,p)=>s+p.net,0)/pcOnly2.length : 102;
+  const baseSavePct = getSavingsPct(avgNet);
+  const extraIncome = extraHrs * state.rate * 1.04 * 0.97 * 4.33; // weekly hours * monthly weeks
+  const extraSaved = extraIncome * (baseSavePct + extraPct/100);
+  const baseMonthly = avgNet * 2 * baseSavePct;
+  const newMonthly = baseMonthly + extraSaved + (avgNet * 2 * (extraPct/100));
+  const extraTotal = newMonthly - baseMonthly;
+
+  document.getElementById("wi-extra").textContent = "+" + fmt(extraTotal);
+
+  // Project with new monthly
+  let bal = state.savings;
+  let months = 0;
+  while (bal < state.goal && months < 240) { bal += newMonthly; months++; }
+  const result = bal >= state.goal ? (months===0 ? "< 1 mo" : months+" mo") : "24mo+";
+  document.getElementById("wi-result").textContent = result;
+
+  // Compare to base
+  const proj = getProjection();
+  const baseIdx = proj.findIndex(m => m.total >= state.goal);
+  const baseMo = baseIdx >= 0 ? baseIdx : 25;
+  const saved = baseMo - months;
+  document.getElementById("wi-sub").textContent = saved > 0 ? `${saved} month${saved!==1?"s":""} faster than your current plan` : saved===0 ? "Same as current plan" : "Adjust sliders to see improvements";
+}
+
+// ── KEYBOARD SHORTCUTS (Enter to submit forms) ────────────────────────
+function initKeyboardShortcuts() {
+  // Paystub form
+  ["new-date","new-hours","new-net","new-source"].forEach(id => {
+    const el = document.getElementById(id);
+    if(el) el.addEventListener("keydown", e => { if(e.key==="Enter") addPaystub(); });
+  });
+  // Expense form
+  ["exp-name","exp-amount"].forEach(id => {
+    const el = document.getElementById(id);
+    if(el) el.addEventListener("keydown", e => { if(e.key==="Enter") addExpense(); });
+  });
+  // Tools
+  ["htp-price","htp-name"].forEach(id => {
+    const el = document.getElementById(id);
+    if(el) el.addEventListener("keydown", e => { if(e.key==="Enter") calcHoursToPrice(); });
+  });
+  ["raise-rate","raise-hrs"].forEach(id => {
+    const el = document.getElementById(id);
+    if(el) el.addEventListener("keydown", e => { if(e.key==="Enter") calcRaise(); });
+  });
+}
+
+// ── HAPTIC ────────────────────────────────────────────────────────────
+function haptic(ms=30) { try { navigator.vibrate && navigator.vibrate(ms); } catch(e){} }
+
+// ── SAVINGS GAUGE ─────────────────────────────────────────────────────
+function renderGauge(pct) {
+  const canvas = document.getElementById("gauge-canvas");
+  if (!canvas) return;
+  const ctx = canvas.getContext("2d");
+  const W=140, H=80, cx=70, cy=76, r=58, lw=12;
+  ctx.clearRect(0,0,W,H);
+  const startA = Math.PI, endA = 2*Math.PI;
+  // Background arc
+  ctx.beginPath(); ctx.arc(cx,cy,r,startA,endA);
+  ctx.strokeStyle = getComputedStyle(document.documentElement).getPropertyValue('--card2').trim()||'#181818';
+  ctx.lineWidth=lw; ctx.lineCap="round"; ctx.stroke();
+  // Colored zones
+  const zones = [[0,0.33,"#ff5252"],[0.33,0.66,"#ffd54f"],[0.66,1.0,"#00e676"]];
+  zones.forEach(([s,e,col])=>{
+    ctx.beginPath(); ctx.arc(cx,cy,r, startA+s*Math.PI, startA+e*Math.PI);
+    ctx.strokeStyle=col; ctx.globalAlpha=0.25; ctx.lineWidth=lw; ctx.stroke(); ctx.globalAlpha=1;
+  });
+  // Fill arc
+  const clampedPct = Math.min(1, Math.max(0, pct/100));
+  const fillColor = clampedPct < 0.33 ? "#ff5252" : clampedPct < 0.66 ? "#ffd54f" : "#00e676";
+  ctx.beginPath(); ctx.arc(cx,cy,r, startA, startA+clampedPct*Math.PI);
+  ctx.strokeStyle=fillColor; ctx.lineWidth=lw; ctx.lineCap="round"; ctx.stroke();
+
+  const pctEl = document.getElementById("gauge-pct");
+  const statusEl = document.getElementById("gauge-status");
+  if(pctEl){ pctEl.textContent=Math.round(pct)+"%"; pctEl.style.color=fillColor; }
+  if(statusEl){ statusEl.textContent = pct<10?"Save more!":pct<20?"Getting there":"Great rate 🎉"; }
+}
+
+
+// ── BILL CALENDAR ─────────────────────────────────────────────────────
+function renderCalendar() {
+  const hdr = document.getElementById("cal-header-row");
+  const body = document.getElementById("cal-body");
+  const lbl = document.getElementById("cal-month-label");
+  if(!hdr||!body) return;
+
+  const now = new Date();
+  const year = now.getFullYear(), month = now.getMonth();
+  const firstDay = new Date(year,month,1).getDay(); // 0=Sun
+  const daysInMonth = new Date(year,month+1,0).getDate();
+  const today = now.getDate();
+
+  if(lbl) lbl.textContent = MONTH_NAMES[month]+" "+year;
+
+  const days=["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+  hdr.innerHTML = days.map(d=>`<div class="cal-header-day">${d}</div>`).join("");
+
+  // Build a map of day -> bills due that day
+  // For recurring bills, we spread them across the month evenly by index
+  const recurring = (state.expenses||[]).filter(e=>e.freq!=="one-time");
+  const billsByDay = {};
+  recurring.forEach((e,i)=>{
+    // Spread bills roughly: 1st = day 1, 2nd = day 8, etc. or evenly spaced
+    const dayOfMonth = Math.min(daysInMonth, 1 + (i * Math.floor(daysInMonth / Math.max(recurring.length,1))));
+    if(!billsByDay[dayOfMonth]) billsByDay[dayOfMonth]=[];
+    billsByDay[dayOfMonth].push(e);
+  });
+
+  let html="";
+  // Empty cells before month starts
+  for(let i=0;i<firstDay;i++) html+=`<div class="cal-day"></div>`;
+  for(let d=1;d<=daysInMonth;d++){
+    const bills = billsByDay[d]||[];
+    const hasBill = bills.length>0;
+    const isToday = d===today;
+    const cls = [hasBill?"has-bill":"",isToday?"today":""].filter(Boolean).join(" ");
+    const mo = bills.reduce((s,e)=>s+toMonthly(e.amount,e.freq),0);
+    html+=`<div class="cal-day ${cls}" title="${bills.map(e=>e.name).join(", ")}">
+      <div class="cal-day-num">${d}</div>
+      ${hasBill?`<div class="cal-bill-dot"></div><div class="cal-bill-amt">-$${Math.round(mo)}</div>`:""}
+    </div>`;
+  }
+  body.innerHTML=html;
+}
+
+// ── COMPOUND GROWTH CHART ─────────────────────────────────────────────
+function renderGrowthChart() {
+  const canvas = document.getElementById("growth-chart");
+  if(!canvas) return;
+  const rect = canvas.parentElement.getBoundingClientRect();
+  const W = rect.width||700, H=140;
+  canvas.width=W; canvas.height=H;
+  const ctx=canvas.getContext("2d");
+  ctx.clearRect(0,0,W,H);
+
+  const pcOnly2 = state.paystubs.filter(p => p.type === "paycheque" || !p.type);
+  const avgNet = pcOnly2.length ? pcOnly2.reduce((s,p)=>s+p.net,0)/pcOnly2.length : 102;
+  const monthly = avgNet*2*getSavingsPct(avgNet);
+  const months=60; // 5 years
+  const cashPoints=[], investPoints=[];
+  let cash=state.savings, invest=state.savings;
+  for(let i=0;i<=months;i++){
+    cashPoints.push(cash);
+    investPoints.push(invest);
+    cash+=monthly;
+    invest=invest*(1+0.08/12)+monthly;
+  }
+  const maxVal=Math.max(...investPoints);
+  const pad={l:10,r:10,t:10,b:20};
+  const chartW=W-pad.l-pad.r, chartH=H-pad.t-pad.b;
+
+  const toX=(i)=>pad.l+(i/months)*chartW;
+  const toY=(v)=>pad.t+chartH-(v/maxVal)*chartH;
+
+  // Cash line
+  ctx.beginPath();
+  cashPoints.forEach((v,i)=>{ if(i===0)ctx.moveTo(toX(i),toY(v)); else ctx.lineTo(toX(i),toY(v)); });
+  ctx.strokeStyle="#64b5f6"; ctx.globalAlpha=0.4; ctx.lineWidth=2; ctx.stroke(); ctx.globalAlpha=1;
+
+  // Invest fill
+  ctx.beginPath();
+  investPoints.forEach((v,i)=>{ if(i===0)ctx.moveTo(toX(i),toY(v)); else ctx.lineTo(toX(i),toY(v)); });
+  ctx.lineTo(toX(months),toY(0)); ctx.lineTo(toX(0),toY(0)); ctx.closePath();
+  ctx.fillStyle="rgba(0,230,118,0.08)"; ctx.fill();
+
+  // Invest line
+  ctx.beginPath();
+  investPoints.forEach((v,i)=>{ if(i===0)ctx.moveTo(toX(i),toY(v)); else ctx.lineTo(toX(i),toY(v)); });
+  ctx.strokeStyle="#00e676"; ctx.lineWidth=2.5; ctx.stroke();
+
+  // Year labels
+  ctx.fillStyle=getComputedStyle(document.documentElement).getPropertyValue('--dim').trim()||'#444';
+  ctx.font="9px 'DM Sans',sans-serif"; ctx.textAlign="center";
+  [12,24,36,48,60].forEach(m=>{ ctx.fillText("Yr "+(m/12), toX(m), H-4); });
+
+  // Gain label
+  const finalInvest=investPoints[months], finalCash=cashPoints[months];
+  const gain=finalInvest-finalCash;
+  const gainEl=document.getElementById("growth-gain");
+  if(gainEl) gainEl.textContent=`+${fmtInt(gain)} extra from investing over 5yrs`;
+}
+
+// ── TOOLS CALCULATORS ─────────────────────────────────────────────────
+function calcHoursToPrice() {
+  const price = parseFloat(document.getElementById("htp-price").value)||0;
+  const name = document.getElementById("htp-name").value||"that";
+  const netHourly = state.rate * 1.04 * 0.97; // after rough tax
+  const hours = price / netHourly;
+  const res = document.getElementById("htp-result");
+  if(!price||price<=0){ res.style.display="none"; return; }
+  res.style.display="";
+  document.getElementById("htp-hours").textContent = hours<1 ? Math.round(hours*60)+"min" : hours.toFixed(1)+"h";
+  document.getElementById("htp-sub").textContent = `${name} costs you ${hours.toFixed(1)} hours of work at $${netHourly.toFixed(2)}/hr after tax`;
+  const days=(hours/8).toFixed(1);
+  const ctx2 = hours<1?"Less than an hour — probably worth it if it makes you happy."
+    :hours<4?`About half a shift. Think twice.`
+    :hours<8?`Almost a full day of work.`
+    :`That's ${days} full work days. Sleep on it.`;
+  document.getElementById("htp-context").textContent=ctx2;
+  haptic();
+}
+
+function calcAfford() {
+  const price = parseFloat(document.getElementById("aff-price").value)||0;
+  const pct = parseFloat(document.getElementById("aff-pct").value)||10;
+  const pcOnly2 = state.paystubs.filter(p => p.type === "paycheque" || !p.type);
+  const avgNet = pcOnly2.length ? pcOnly2.reduce((s,p)=>s+p.net,0)/pcOnly2.length : 102;
+  const sidePerMonth = avgNet*2*(pct/100);
+  const months = sidePerMonth>0 ? Math.ceil(price/sidePerMonth) : 0;
+  const res = document.getElementById("aff-result");
+  if(!price||price<=0){ res.style.display="none"; return; }
+  res.style.display="flex";
+  document.getElementById("aff-months").textContent = months<=0?"Now!":months===1?"1 mo":months+" mo";
+  document.getElementById("aff-monthly").textContent = fmt(sidePerMonth);
+}
+
+function calcRaise() {
+  const newRate = parseFloat(document.getElementById("raise-rate").value)||0;
+  const hrs = parseFloat(document.getElementById("raise-hrs").value)||0;
+  const taxFactor = 1.04*0.97;
+  const currentNet = state.rate*hrs*taxFactor;
+  const newNet = newRate*hrs*taxFactor;
+  const diff = newNet-currentNet;
+  const res = document.getElementById("raise-result");
+  if(!newRate||!hrs||diff<=0){ res.style.display="none"; return; }
+  res.style.display="block";
+  document.getElementById("raise-per-pay").textContent="+"+fmt(diff);
+  document.getElementById("raise-per-month").textContent="+"+fmt(diff*2);
+  document.getElementById("raise-per-year").textContent="+"+fmtInt(diff*24);
+  const proj=getProjection(), goal=state.goal;
+  const baseIdx=proj.findIndex(m=>m.total>=goal);
+  // rough how much faster with raise
+  const extraMonthly=diff*2*getSavingsPct(newNet);
+  let bal2=state.savings,mo2=0;
+  const baseMonthly=(state.paystubs.length?state.paystubs.reduce((s,p)=>s+p.net,0)/state.paystubs.length*2*getSavingsPct(state.paystubs.reduce((s,p)=>s+p.net,0)/state.paystubs.length):0);
+  while(bal2<goal&&mo2<240){ bal2+=baseMonthly+extraMonthly; mo2++; }
+  const saved=baseIdx>=0?baseIdx-mo2:0;
+  document.getElementById("raise-goal-impact").textContent = saved>0
+    ? `💡 You'd hit your $${Math.round(goal).toLocaleString("en-CA")} goal ~${saved} month${saved!==1?"s":""} sooner.`
+    : `💡 Every bit helps toward your $${Math.round(goal).toLocaleString("en-CA")} goal.`;
+  haptic();
+}
+
+// ── INIT ──────────────────────────────────────────────────────────────
+loadState();
+applyTheme();
+renderQuote();
+
+document.getElementById("inp-name").value = state.name;
+document.getElementById("inp-rate").value = state.rate;
+document.getElementById("inp-savings").value = state.baseSavings !== undefined ? state.baseSavings : (state.savings || 410);
+document.getElementById("inp-goal").value = state.goal;
+document.getElementById("inp-custpct").value = state.customPct;
+document.getElementById("custpct-val").textContent = state.customPct + "%";
+document.getElementById("inp-alert").value = state.alertThreshold || 100;
+if (state.strategy === "custom") setStrategy("custom");
+if (!state.expenses) state.expenses = [];
+if (!state.txLog) state.txLog = [];
+if (!state.deductions) state.deductions = [];
+if (!state.nextDedId) state.nextDedId = 1;
+if (!state.saveChecks) state.saveChecks = {};
+if (!state.worstCasePay) state.worstCasePay = 0;
+if (!state.holdings) state.holdings = [];
+if (!state.nextHoldingId) state.nextHoldingId = 1;
+if (!state.nextId) state.nextId = state.nextTxId || 100;
+
+if (state.lastPayDate) document.getElementById("inp-lastpay").value = state.lastPayDate;
+if (state.worstCasePay) document.getElementById("inp-worstcase").value = state.worstCasePay;
+renderStubs();
+updateAll();
+initKeyboardShortcuts();
+</script>
+<!-- BOTTOM NAVIGATION -->
+<nav id="bottom-nav">
+  <button class="nav-btn active" id="nav-setup" onclick="switchTab('setup')">
+    <span class="nav-icon">⚙️</span><span class="nav-label">Setup</span>
+  </button>
+  <button class="nav-btn" id="nav-paystubs" onclick="switchTab('paystubs')">
+    <span class="nav-icon">💳</span><span class="nav-label">Pay</span>
+  </button>
+  <button class="nav-btn" id="nav-expenses" onclick="switchTab('expenses')">
+    <span class="nav-icon">💸</span><span class="nav-label">Expenses</span>
+  </button>
+  <button class="nav-btn" id="nav-plan" onclick="switchTab('plan')">
+    <span class="nav-icon">📈</span><span class="nav-label">Plan</span>
+  </button>
+  <button class="nav-btn" id="nav-invest" onclick="switchTab('invest')">
+    <span class="nav-icon">💰</span><span class="nav-label">Invest</span>
+  </button>
+  <button class="nav-btn" id="nav-log" onclick="switchTab('log')">
+    <span class="nav-icon">📒</span><span class="nav-label">Log</span>
+  </button>
+  <button class="nav-btn" id="nav-tools" onclick="switchTab('tools')">
+    <span class="nav-icon">🧮</span><span class="nav-label">Tools</span>
+  </button>
+</nav>
+
+<script>
+// ── SERVICE WORKER REGISTRATION ──
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("sw.js")
+      .then(r => console.log("SW registered"))
+      .catch(e => console.log("SW failed:", e));
+  });
+}
+</script>
+</body>
+</html>
